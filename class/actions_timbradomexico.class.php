@@ -23,7 +23,6 @@
  * Put detailed description here.
  */
 
-require '../vendor/autoload.php';
 
 /**
  * Class ActionsTimbradoMexico
