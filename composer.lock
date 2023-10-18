@@ -1,0 +1,73 @@
+{
+    "_readme": [
+        "This file locks the dependencies of your project to a known state",
+        "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
+        "This file is @generated automatically"
+    ],
+    "content-hash": "2b45ce1d0ddb473a74c917a9c7d699bd",
+    "packages": [
+        {
+            "name": "facturapi/facturapi-php",
+            "version": "2.4.2",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/FacturAPI/facturapi-php.git",
+                "reference": "9d43307648b5a835ef802577dceaddb9798d1b58"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/FacturAPI/facturapi-php/zipball/9d43307648b5a835ef802577dceaddb9798d1b58",
+                "reference": "9d43307648b5a835ef802577dceaddb9798d1b58",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=5.5.0"
+            },
+            "require-dev": {
+                "phpspec/phpspec": "~2.0",
+                "phpunit/phpunit": "~4.0"
+            },
+            "type": "library",
+            "autoload": {
+                "classmap": [
+                    "/src"
+                ]
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Jhonatan Laguna",
+                    "email": "hola@jhonatanlaguna.com",
+                    "homepage": "http://jhonatanlaguna.com"
+                }
+            ],
+            "description": "Facturapi's PHP client library",
+            "homepage": "https://www.facturapi.io/",
+            "keywords": [
+                "api",
+                "cfdi",
+                "factura",
+                "facturapi",
+                "mexico",
+                "sat"
+            ],
+            "support": {
+                "issues": "https://github.com/FacturAPI/facturapi-php/issues",
+                "source": "https://github.com/FacturAPI/facturapi-php/tree/2.4.2"
+            },
+            "time": "2023-06-13T16:55:17+00:00"
+        }
+    ],
+    "packages-dev": [],
+    "aliases": [],
+    "minimum-stability": "stable",
+    "stability-flags": [],
+    "prefer-stable": false,
+    "prefer-lowest": false,
+    "platform": [],
+    "platform-dev": [],
+    "plugin-api-version": "2.6.0"
+}

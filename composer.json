@@ -1,0 +1,5 @@
+{
+    "require": {
+        "facturapi/facturapi-php": "^2.4"
+    }
+}
