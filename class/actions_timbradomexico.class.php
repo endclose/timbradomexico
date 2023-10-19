@@ -24,6 +24,7 @@
  */
 
 
+
 /**
  * Class ActionsTimbradoMexico
  */
@@ -107,7 +108,11 @@ class ActionsTimbradoMexico
 		/* print_r($parameters); print_r($object); echo "action: " . $action; */
 		if (in_array($parameters['currentcontext'], array('invoicecard'))) {    // do something only for the context 'somecontext1' or 'somecontext2
 			if ($action == 'timbrar') {
+				include_once DOL_DOCUMENT_ROOT . '/custom/timbradomexico/lib/timbradomexico.lib.php';
+				$handler = new FacturaHandle('sk_test_kDGr5jYO4NyAP10R9ByRPJWAODlBb8eQmZEoVdJXKv');
 
+				$invoice = $handler->createInvoice($object);
+				var_dump($invoice);
 			}
 		}
 
@@ -366,7 +371,7 @@ class ActionsTimbradoMexico
 	public function addMoreActionsButtons($parameters, $object, $action, $hookmanager)
 	{
 		if(in_array($parameters['currentcontext'], array('invoicecard'))){
-			print '<a class="butAction classfortooltip" href="/dolibarr/htdocs/compta/facture/card.php?facid=1717&amp;action=timbrar" title="">Timbrar</a>';
+			print '<a class="butAction classfortooltip" href="'.DOL_URL_ROOT.'/compta/facture/card.php?facid='.$object->id.'&amp;action=timbrar" title="">Timbrar</a>';
 		}
 	}
 }
