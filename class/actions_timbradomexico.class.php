@@ -112,7 +112,13 @@ class ActionsTimbradoMexico
 				$handler = new FacturaHandle('sk_test_kDGr5jYO4NyAP10R9ByRPJWAODlBb8eQmZEoVdJXKv');
 
 				$invoice = $handler->createInvoice($object);
-				var_dump($invoice);
+				// var_dump($invoice);
+				if(isset($invoice->ok)){
+					$this->errors[] = $invoice->message;
+					$error++;
+				}else{
+					var_dump($invoice);
+				}
 			}
 		}
 

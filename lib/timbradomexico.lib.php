@@ -26,9 +26,13 @@ class FacturaHandle
 		$invoice->customer->address->zip = $object->thirdparty->zip;
 
 		foreach($object->lines as $line){
+			$line->fetch_product();
+			$line_product = $line->product;
+			$line_product->fetch_optionals();
 			$item_line = new stdClass();
 			$item_line->quantity = $line->qty;
 			$item_line->product = new stdClass();
+
 			$item_line->product->description = $line->libelle;
 			$item_line->product->product_key = '60131324';
 			$item_line->product->price = $line->subprice;
@@ -39,7 +43,7 @@ class FacturaHandle
 
 		$invoice->payment_form = '28';
 		$invoice->payment_method = 'PUE';
-		$invoice->currency = 'USD';
+		$invoice->currency = 'MXN';
 
 
 		return $invoice;
@@ -47,7 +51,7 @@ class FacturaHandle
 
 	public function createInvoice($object){
 		$invoice = $this->formatInvoice($object);
-		var_dump($invoice);
+		// echo '<pre>';var_dump($object);echo '</pre>';exit;
 		$res = $this->facturapi->Invoices->create($invoice);
 
 		return $res;

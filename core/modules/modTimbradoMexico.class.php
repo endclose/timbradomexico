@@ -26,7 +26,7 @@
  *  \ingroup    timbradomexico
  *  \brief      Description and activation file for module TimbradoMexico
  */
-include_once DOL_DOCUMENT_ROOT.'/core/modules/DolibarrModules.class.php';
+include_once DOL_DOCUMENT_ROOT . '/core/modules/DolibarrModules.class.php';
 
 /**
  *  Description and activation class for module TimbradoMexico
@@ -77,7 +77,7 @@ class modTimbradoMexico extends DolibarrModules
 		//$this->url_last_version = 'http://www.example.com/versionmodule.txt';
 
 		// Key used in llx_const table to save module status enabled/disabled (where TIMBRADOMEXICO is value of property name of module in uppercase)
-		$this->const_name = 'MAIN_MODULE_'.strtoupper($this->name);
+		$this->const_name = 'MAIN_MODULE_' . strtoupper($this->name);
 
 		// Name of image file used for this module.
 		// If file is in theme/yourtheme/img directory under name object_pictovalue.png, use this->picto='pictovalue'
@@ -115,10 +115,10 @@ class modTimbradoMexico extends DolibarrModules
 			),
 			// Set here all hooks context managed by module. To find available hook context, make a "grep -r '>initHooks(' *" on source code. You can also set hook context to 'all'
 			'hooks' => array(
-				  'data' => array(
-				      'invoicecard',
-				  ),
-				  'entity' => $conf->entity,
+				'data' => array(
+					'invoicecard',
+				),
+				'entity' => $conf->entity,
 			),
 			// Set this to 1 if features of module are opened to external users
 			'moduleforexternal' => 0,
@@ -434,10 +434,203 @@ class modTimbradoMexico extends DolibarrModules
 		}
 
 		// Create extrafields during init
-		//include_once DOL_DOCUMENT_ROOT.'/core/class/extrafields.class.php';
-		//$extrafields = new ExtraFields($this->db);
-		//$result1=$extrafields->addExtraField('timbradomexico_myattr1', "New Attr 1 label", 'boolean', 1,  3, 'thirdparty',   0, 0, '', '', 1, '', 0, 0, '', '', 'timbradomexico@timbradomexico', '$conf->timbradomexico->enabled');
-		//$result2=$extrafields->addExtraField('timbradomexico_myattr2', "New Attr 2 label", 'varchar', 1, 10, 'project',      0, 0, '', '', 1, '', 0, 0, '', '', 'timbradomexico@timbradomexico', '$conf->timbradomexico->enabled');
+		include_once DOL_DOCUMENT_ROOT . '/core/class/extrafields.class.php';
+		$extrafields = new ExtraFields($this->db);
+		// Regimen fiscal
+		$result1 = $extrafields->addExtraField(
+			'regimenfiscal',
+			"Régimen fiscal",
+			'sellist',
+			'100',
+			'',
+			'societe',
+			0,
+			0,
+			'',
+			array('options' => array("sat_c_reg_fiscal:CONCAT(c_RegimenFiscal, ' - ', label):c_RegimenFiscal" => NULL)),
+			1,
+			'',
+			'1',
+			'',
+			'',
+			'',
+			'',
+			'$conf->timbradomexico->enabled',
+			0,
+			'0',
+			array(
+				'css' => '',
+				'cssview' => '',
+				'csslist' => ''
+			),
+		);
+		// Forma de pago
+		$result1 = $extrafields->addExtraField(
+			'formapago',
+			"Forma de pago",
+			'sellist',
+			'100',
+			'',
+			'societe',
+			0,
+			0,
+			'',
+			array('options' => array("sat_c_formapago:CONCAT(c_FormaPago, ' - ', label):c_FormaPago" => NULL)),
+			1,
+			'',
+			'1',
+			'',
+			'',
+			'',
+			'',
+			'$conf->timbradomexico->enabled',
+			0,
+			'0',
+			array(
+				'css' => '',
+				'cssview' => '',
+				'csslist' => ''
+			),
+		);
+		$result1 = $extrafields->addExtraField(
+			'banco',
+			"Banco",
+			'sellist',
+			'100',
+			'',
+			'societe',
+			0,
+			0,
+			'',
+			array('options' => array("sat_c_bancos:label:c_Banco" => NULL)),
+			1,
+			'',
+			'1',
+			'',
+			'',
+			'',
+			'',
+			'$conf->timbradomexico->enabled',
+			0,
+			'0',
+			array(
+				'css' => '',
+				'cssview' => '',
+				'csslist' => ''
+			),
+		);
+
+		$result1 = $extrafields->addExtraField(
+			'lineaproducto',
+			"Linea producto",
+			'sellist',
+			'100',
+			'',
+			'product',
+			0,
+			0,
+			'',
+			array('options' => array("c_lineas_prod:libelle:rowid" => NULL)),
+			1,
+			'',
+			'1',
+			'',
+			'',
+			'',
+			'',
+			'$conf->timbradomexico->enabled',
+			0,
+			'0',
+			array(
+				'css' => '',
+				'cssview' => '',
+				'csslist' => ''
+			),
+		);
+		$result1 = $extrafields->addExtraField(
+			'claveunidad',
+			"Clave Unidad",
+			'sellist',
+			'100',
+			'',
+			'product',
+			0,
+			0,
+			'',
+			array('options' => array("sat_c_unidades:CONCAT(c_ClaveUnidad, ' - ', label):c_ClaveUnidad" => NULL)),
+			1,
+			'',
+			'1',
+			'',
+			'',
+			'',
+			'',
+			'$conf->timbradomexico->enabled',
+			0,
+			'0',
+			array(
+				'css' => '',
+				'cssview' => '',
+				'csslist' => ''
+			),
+		);
+		$result1 = $extrafields->addExtraField(
+			'objetoimp',
+			"Objeto de impuesto",
+			'sellist',
+			'100',
+			'',
+			'product',
+			0,
+			0,
+			'',
+			array('options' => array("sat_c_objetoimp:label:c_ObjetoImp" => NULL)),
+			1,
+			'',
+			'1',
+			'',
+			'',
+			'',
+			'',
+			'$conf->timbradomexico->enabled',
+			0,
+			'0',
+			array(
+				'css' => '',
+				'cssview' => '',
+				'csslist' => ''
+			),
+		);
+		$result1 = $extrafields->addExtraField(
+			'prodserv',
+			"Clave Producto/Servicio",
+			'varchar',
+			'100',
+			'255',
+			'product',
+			0,
+			0,
+			'',
+			array('options' => array("" => NULL)),
+			1,
+			'',
+			'1',
+			'',
+			'',
+			'',
+			'',
+			'$conf->timbradomexico->enabled',
+			0,
+			'0',
+			array(
+				'css' => '',
+				'cssview' => '',
+				'csslist' => ''
+			),
+		);
+
+
+		// $result2=$extrafields->addExtraField('timbradomexico_myattr2', "New Attr 2 label", 'varchar', 1, 10, 'project',      0, 0, '', '', 1, '', 0, 0, '', '', 'timbradomexico@timbradomexico', '$conf->timbradomexico->enabled',);
 		//$result3=$extrafields->addExtraField('timbradomexico_myattr3', "New Attr 3 label", 'varchar', 1, 10, 'bank_account', 0, 0, '', '', 1, '', 0, 0, '', '', 'timbradomexico@timbradomexico', '$conf->timbradomexico->enabled');
 		//$result4=$extrafields->addExtraField('timbradomexico_myattr4', "New Attr 4 label", 'select',  1,  3, 'thirdparty',   0, 1, '', array('options'=>array('code1'=>'Val1','code2'=>'Val2','code3'=>'Val3')), 1,'', 0, 0, '', '', 'timbradomexico@timbradomexico', '$conf->timbradomexico->enabled');
 		//$result5=$extrafields->addExtraField('timbradomexico_myattr5', "New Attr 5 label", 'text',    1, 10, 'user',         0, 0, '', '', 1, '', 0, 0, '', '', 'timbradomexico@timbradomexico', '$conf->timbradomexico->enabled');
@@ -450,19 +643,19 @@ class modTimbradoMexico extends DolibarrModules
 		// Document templates
 		$moduledir = dol_sanitizeFileName('timbradomexico');
 		$myTmpObjects = array();
-		$myTmpObjects['MyObject'] = array('includerefgeneration'=>0, 'includedocgeneration'=>0);
+		$myTmpObjects['MyObject'] = array('includerefgeneration' => 0, 'includedocgeneration' => 0);
 
 		foreach ($myTmpObjects as $myTmpObjectKey => $myTmpObjectArray) {
 			if ($myTmpObjectKey == 'MyObject') {
 				continue;
 			}
 			if ($myTmpObjectArray['includerefgeneration']) {
-				$src = DOL_DOCUMENT_ROOT.'/install/doctemplates/'.$moduledir.'/template_myobjects.odt';
-				$dirodt = DOL_DATA_ROOT.'/doctemplates/'.$moduledir;
-				$dest = $dirodt.'/template_myobjects.odt';
+				$src = DOL_DOCUMENT_ROOT . '/install/doctemplates/' . $moduledir . '/template_myobjects.odt';
+				$dirodt = DOL_DATA_ROOT . '/doctemplates/' . $moduledir;
+				$dest = $dirodt . '/template_myobjects.odt';
 
 				if (file_exists($src) && !file_exists($dest)) {
-					require_once DOL_DOCUMENT_ROOT.'/core/lib/files.lib.php';
+					require_once DOL_DOCUMENT_ROOT . '/core/lib/files.lib.php';
 					dol_mkdir($dirodt);
 					$result = dol_copy($src, $dest, 0, 0);
 					if ($result < 0) {
@@ -473,10 +666,10 @@ class modTimbradoMexico extends DolibarrModules
 				}
 
 				$sql = array_merge($sql, array(
-					"DELETE FROM ".MAIN_DB_PREFIX."document_model WHERE nom = 'standard_".strtolower($myTmpObjectKey)."' AND type = '".$this->db->escape(strtolower($myTmpObjectKey))."' AND entity = ".((int) $conf->entity),
-					"INSERT INTO ".MAIN_DB_PREFIX."document_model (nom, type, entity) VALUES('standard_".strtolower($myTmpObjectKey)."', '".$this->db->escape(strtolower($myTmpObjectKey))."', ".((int) $conf->entity).")",
-					"DELETE FROM ".MAIN_DB_PREFIX."document_model WHERE nom = 'generic_".strtolower($myTmpObjectKey)."_odt' AND type = '".$this->db->escape(strtolower($myTmpObjectKey))."' AND entity = ".((int) $conf->entity),
-					"INSERT INTO ".MAIN_DB_PREFIX."document_model (nom, type, entity) VALUES('generic_".strtolower($myTmpObjectKey)."_odt', '".$this->db->escape(strtolower($myTmpObjectKey))."', ".((int) $conf->entity).")"
+					"DELETE FROM " . MAIN_DB_PREFIX . "document_model WHERE nom = 'standard_" . strtolower($myTmpObjectKey) . "' AND type = '" . $this->db->escape(strtolower($myTmpObjectKey)) . "' AND entity = " . ((int) $conf->entity),
+					"INSERT INTO " . MAIN_DB_PREFIX . "document_model (nom, type, entity) VALUES('standard_" . strtolower($myTmpObjectKey) . "', '" . $this->db->escape(strtolower($myTmpObjectKey)) . "', " . ((int) $conf->entity) . ")",
+					"DELETE FROM " . MAIN_DB_PREFIX . "document_model WHERE nom = 'generic_" . strtolower($myTmpObjectKey) . "_odt' AND type = '" . $this->db->escape(strtolower($myTmpObjectKey)) . "' AND entity = " . ((int) $conf->entity),
+					"INSERT INTO " . MAIN_DB_PREFIX . "document_model (nom, type, entity) VALUES('generic_" . strtolower($myTmpObjectKey) . "_odt', '" . $this->db->escape(strtolower($myTmpObjectKey)) . "', " . ((int) $conf->entity) . ")"
 				));
 			}
 		}
