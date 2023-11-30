@@ -17,6 +17,8 @@ class FacturaHandle
 		$object->fetch_thirdparty();
 		$object->thirdparty->fetch_optionals();
 
+		$type = $object->type;
+
 		$invoice = new stdClass();
 		$invoice->customer = new stdClass();
 		$invoice->customer->address = new stdClass();
@@ -42,7 +44,7 @@ class FacturaHandle
 			$item_line->product->sku = $line->ref;
 			$item_line->product->description = $line->libelle;
 			$item_line->product->product_key = $product->array_options['options_prodserv'];
-			$item_line->product->price = $line->subprice;
+			$item_line->product->price = $type == $object::TYPE_CREDIT_NOTE ?  $line->subprice * -1 : $line->subprice;
 			$item_line->product->taxability = $product->array_options['options_objetoimp'];
 			$item_line->product->tax_included = false;
 
@@ -66,7 +68,7 @@ class FacturaHandle
 		$invoice = $this->formatInvoice($object);
 		$res = $this->facturapi->Invoices->create($invoice);
 
-		if($res->id){
+		if ($res->id) {
 			$object->array_options['options_idfacturapi'] = $res->id;
 			$object->array_options['options_uuid'] = $res->uuid;
 			$object->update($user);
@@ -116,8 +118,9 @@ class FacturaHandle
 		return file_put_contents($final_dir, $file);
 	}
 
-	public function recoverFiles($object, $returned_format = 'nozip'){
-		switch($returned_format){
+	public function recoverFiles($object, $returned_format = 'nozip')
+	{
+		switch ($returned_format) {
 			case 'pdf':
 				$pdf = $this->getInvoicePDF($object->array_options['options_idfacturapi']);
 				$this->saveFile($object, $pdf, '.pdf');
@@ -137,6 +140,5 @@ class FacturaHandle
 				$this->saveFile($object, $pdf, '.pdf');
 				break;
 		}
-
 	}
 }
