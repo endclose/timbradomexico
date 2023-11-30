@@ -107,18 +107,44 @@ class ActionsTimbradoMexico
 
 		/* print_r($parameters); print_r($object); echo "action: " . $action; */
 		if (in_array($parameters['currentcontext'], array('invoicecard'))) {    // do something only for the context 'somecontext1' or 'somecontext2
-			if ($action == 'timbrar') {
-				include_once DOL_DOCUMENT_ROOT . '/custom/timbradomexico/lib/timbradomexico.lib.php';
-				$handler = new FacturaHandle('sk_test_kDGr5jYO4NyAP10R9ByRPJWAODlBb8eQmZEoVdJXKv');
-
+			include_once DOL_DOCUMENT_ROOT . '/custom/timbradomexico/lib/timbradomexico.lib.php';
+			$handler = new FacturaHandle('sk_test_kDGr5jYO4NyAP10R9ByRPJWAODlBb8eQmZEoVdJXKv');
+			if ($action == 'timbrar' && $object->array_options['options_timbrada'] == 0) {
 				$invoice = $handler->createInvoice($object);
-				// var_dump($invoice);
-				if(isset($invoice->ok)){
+				if (isset($invoice->ok)) {
 					$this->errors[] = $invoice->message;
 					$error++;
-				}else{
-					var_dump($invoice);
+				} else {
+					$object->array_options['options_uuid'] = $invoice->uuid;
+					$object->array_options['options_idfacturapi'] = $invoice->id;
+					$object->array_options['options_timbrada'] = true;
+					$object->update($user);
+					setEventMessage('Factura timbrada correctamente');
+					header('Location: ' . DOL_URL_ROOT . '/compta/facture/card.php?facid=' . $object->id);
 				}
+			} else if ($action == 'add') {
+				$_POST['options_usocfdi'] = 'G03';
+				$_POST['options_metodopago'] = 'PUE';
+				switch (intval(GETPOST('type'))) {
+					case $object::TYPE_STANDARD:
+					case $object::TYPE_REPLACEMENT:
+					case $object::TYPE_DEPOSIT:
+						$_POST['options_tipocomprobante'] = 'I';
+						break;
+					case $object::TYPE_CREDIT_NOTE:
+						$_POST['options_tipocomprobante'] = 'E';
+				}
+			} else if ($action == 'builddoc') {
+				$action = ''; // Prevents the standard action to be executed
+				if ($object->array_options['options_timbrada'] == 1) {
+					$handler->recoverFiles($object);
+				}
+			}else if($action == 'update_extras' && GETPOST('attribute') == 'tipocomprobante'){
+				setEventMessage('El tipo de comprobante no puede ser modificado', 'errors');
+				$action = ''; // Prevents the standard action to be executed
+			}else if($action == 'modif' && $object->array_options['options_timbrada'] == 1){
+				setEventMessage('La factura ya ha sido timbrada, no se puede modificar <br> Primero, cancele esta factura', 'errors');
+				$action = ''; // Prevents the standard action to be executed
 			}
 		}
 
@@ -376,8 +402,10 @@ class ActionsTimbradoMexico
 
 	public function addMoreActionsButtons($parameters, $object, $action, $hookmanager)
 	{
-		if(in_array($parameters['currentcontext'], array('invoicecard'))){
-			print '<a class="butAction classfortooltip" href="'.DOL_URL_ROOT.'/compta/facture/card.php?facid='.$object->id.'&amp;action=timbrar" title="">Timbrar</a>';
+		if (in_array($parameters['currentcontext'], array('invoicecard'))) {
+			if ($object->array_options['options_timbrada'] == 0 && $object->statut == $object::STATUS_VALIDATED) {
+				print '<a class="butAction classfortooltip" href="' . DOL_URL_ROOT . '/compta/facture/card.php?facid=' . $object->id . '&amp;action=timbrar" title="">Timbrar</a>';
+			}
 		}
 	}
 }

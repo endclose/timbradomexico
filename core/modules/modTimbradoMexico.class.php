@@ -520,6 +520,7 @@ class modTimbradoMexico extends DolibarrModules
 			),
 		);
 
+		//Productos
 		$result1 = $extrafields->addExtraField(
 			'lineaproducto',
 			"Linea producto",
@@ -629,6 +630,189 @@ class modTimbradoMexico extends DolibarrModules
 			),
 		);
 
+		//Facture
+		$result1 = $extrafields->addExtraField(
+			'usocfdi',
+			"Uso de CFDI",
+			'sellist',
+			'101',
+			'',
+			'facture',
+			0,
+			0,
+			'G03',
+			array('options' => array("sat_c_uso_cfdi:CONCAT(c_UsoCFDI, ' ', label):c_UsoCFDI" => NULL)),
+			0,
+			'',
+			'4',
+			'',
+			'',
+			'',
+			'',
+			'$conf->timbradomexico->enabled',
+			0,
+			'0',
+			array(
+				'css' => '',
+				'cssview' => '',
+				'csslist' => ''
+			),
+		);
+		$result1 = $extrafields->addExtraField(
+			'tipocomprobante',
+			"Tipo de comprobante",
+			'sellist',
+			'100',
+			'',
+			'facture',
+			0,
+			0,
+			'',
+			array('options' => array("sat_c_tipo_comprobante:label:c_TipoDeComprobante" => NULL)),
+			0,
+			'',
+			'4',
+			'',
+			'',
+			'',
+			'',
+			'$conf->timbradomexico->enabled',
+			0,
+			'0',
+			array(
+				'css' => '',
+				'cssview' => '',
+				'csslist' => ''
+			),
+		);
+		$result1 = $extrafields->addExtraField(
+			'metodopago',
+			"Método de pago",
+			'sellist',
+			'102',
+			'',
+			'facture',
+			0,
+			0,
+			'',
+			array('options' => array("sat_c_metodopago:CONCAT(c_MetodoPago, ' ' , label):c_MetodoPago" => NULL)),
+			0,
+			'',
+			'4',
+			'',
+			'',
+			'',
+			'',
+			'$conf->timbradomexico->enabled',
+			0,
+			'0',
+			array(
+				'css' => '',
+				'cssview' => '',
+				'csslist' => ''
+			),
+		);
+		$result1 = $extrafields->addExtraField(
+			'formapago',
+			"Forma de pago",
+			'sellist',
+			'103',
+			'',
+			'facture',
+			0,
+			0,
+			'',
+			array('options' => array("sat_c_formapago:CONCAT(c_FormaPago, ' ' , label):c_FormaPago" => NULL)),
+			0,
+			'',
+			'4',
+			'',
+			'',
+			'',
+			'',
+			'$conf->timbradomexico->enabled',
+			0,
+			'0',
+			array(
+				'css' => '',
+				'cssview' => '',
+				'csslist' => ''
+			),
+		);
+		$result1 = $extrafields->addExtraField(
+			'uuid',
+			"UUID",
+			'varchar',
+			'99',
+			'255',
+			'facture',
+			1,
+			0,
+			'',
+			array('options' => array("" => NULL)),
+			0,
+			'',
+			'5',
+			'',
+			'',
+			'',
+			'',
+			'$conf->timbradomexico->enabled',
+			0,
+			'0',
+			array(
+				'css' => '',
+				'cssview' => '',
+				'csslist' => ''
+			),
+		);
+		$result1 = $extrafields->addExtraField(
+			'idfacturapi',
+			"ID Facturapi",
+			'varchar',
+			'100',
+			'255',
+			'facture',
+			1,
+			0,
+			'',
+			array('options' => array("" => NULL)),
+			0,
+			'',
+			'0',
+			'',
+			'',
+			'',
+			'',
+			'$conf->timbradomexico->enabled',
+			0,
+			'0',
+			array(
+				'css' => '',
+				'cssview' => '',
+				'csslist' => ''
+			),
+		);
+		$result1 = $extrafields->addExtraField(
+			'timbrada',
+			'timbrada',
+			'boolean',
+			100,
+			'',
+			'facture',
+			0,
+			0,
+			'0',
+			array('options' => array("" => NULL)),
+			0,
+			'',
+			'0',
+			'',
+			'',
+			'',
+			'',
+			'$conf->timbradomexico->enabled'
+		);
 
 		// $result2=$extrafields->addExtraField('timbradomexico_myattr2', "New Attr 2 label", 'varchar', 1, 10, 'project',      0, 0, '', '', 1, '', 0, 0, '', '', 'timbradomexico@timbradomexico', '$conf->timbradomexico->enabled',);
 		//$result3=$extrafields->addExtraField('timbradomexico_myattr3', "New Attr 3 label", 'varchar', 1, 10, 'bank_account', 0, 0, '', '', 1, '', 0, 0, '', '', 'timbradomexico@timbradomexico', '$conf->timbradomexico->enabled');
