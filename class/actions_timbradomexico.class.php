@@ -336,6 +336,12 @@ class ActionsTimbradoMexico
 	{
 		global $user;
 
+		echo '<pre>';print_r($parameters);echo '</pre>';
+		if ($parameters['currentcontext'] == 'invoicecard'){
+			$query_params = parse_url($_SERVER['REQUEST_URI'], PHP_URL_QUERY);
+			header ('Location: ' . DOL_URL_ROOT . '/custom/timbradomexico/facture/card.php?' . $query_params);
+		}
+
 		if ($parameters['features'] == 'myobject') {
 			if ($user->rights->timbradomexico->myobject->read) {
 				$this->results['result'] = 1;

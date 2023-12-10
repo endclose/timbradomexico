@@ -26,7 +26,7 @@ class FacturaHandle
 
 		$invoice->customer->legal_name = $object->thirdparty->name;
 		$invoice->customer->tax_id = $object->thirdparty->idprof1;
-		$invoice->customer->tax_system = $object->thirdparty->array_options['options_regimenfiscal'];
+		$invoice->customer->tax_system = $object->array_options['options_regimenfiscalreceptor'];
 
 		$invoice->customer->address->zip = $object->thirdparty->zip;
 
@@ -39,24 +39,30 @@ class FacturaHandle
 			$item_line = new stdClass();
 
 			$item_line->quantity = $line->qty;
+			$item_line->discount = 0;
+			if ($object->array_options['options_desglosedescuento']){
+				$item_line->discount = $line->subprice * $line->remise_percent / 100;
+			}
 			$item_line->product = new stdClass();
 
 			$item_line->product->sku = $line->ref;
 			$item_line->product->description = $line->libelle;
 			$item_line->product->product_key = $product->array_options['options_prodserv'];
-			$item_line->product->price = $type == $object::TYPE_CREDIT_NOTE ?  $line->subprice * -1 : $line->subprice;
+			$item_line->product->price = $type == $object::TYPE_CREDIT_NOTE ?  $line->subprice * -1 : ($object->array_options['options_desglosedescuento'] ? $line->subprice: $line->subprice - $item_line->discount);
 			$item_line->product->taxability = $product->array_options['options_objetoimp'];
+			$item_line->product->unit_key = $product->array_options['options_claveunidad'];
 			$item_line->product->tax_included = false;
 
 			$invoice->items[] = $item_line;
 		}
 
 		$invoice->type = $object->array_options['options_tipocomprobante'];
+		$invoice->export = $object->array_options['options_exportacion'];
 		$invoice->payment_form = $object->array_options['options_formapago'];
 		$invoice->payment_method = $object->array_options['options_metodopago'];
 		$invoice->currency = 'MXN';
 
-		//echo '<pre>';var_dump($invoice);echo '</pre>';exit;
+		echo '<pre>';var_dump($invoice);echo '</pre>';exit;
 		return $invoice;
 	}
 
@@ -71,6 +77,7 @@ class FacturaHandle
 		if ($res->id) {
 			$object->array_options['options_idfacturapi'] = $res->id;
 			$object->array_options['options_uuid'] = $res->uuid;
+			$object->array_options['options_timbrada'] = 1;
 			$object->update($user);
 
 			// Save PDF
