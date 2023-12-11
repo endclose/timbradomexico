@@ -40,7 +40,7 @@ class FacturaHandle
 
 			$item_line->quantity = $line->qty;
 			$item_line->discount = 0;
-			if ($object->array_options['options_desglosedescuento']){
+			if ($object->array_options['options_desglosedescuento']) {
 				$item_line->discount = $line->subprice * $line->remise_percent / 100;
 			}
 			$item_line->product = new stdClass();
@@ -48,7 +48,7 @@ class FacturaHandle
 			$item_line->product->sku = $line->ref;
 			$item_line->product->description = $line->libelle;
 			$item_line->product->product_key = $product->array_options['options_prodserv'];
-			$item_line->product->price = $type == $object::TYPE_CREDIT_NOTE ?  $line->subprice * -1 : ($object->array_options['options_desglosedescuento'] ? $line->subprice: $line->subprice - $item_line->discount);
+			$item_line->product->price = $type == $object::TYPE_CREDIT_NOTE ?  $line->subprice * -1 : ($object->array_options['options_desglosedescuento'] ? $line->subprice : $line->subprice - $item_line->discount);
 			$item_line->product->taxability = $product->array_options['options_objetoimp'];
 			$item_line->product->unit_key = $product->array_options['options_claveunidad'];
 			$item_line->product->tax_included = false;
@@ -62,28 +62,29 @@ class FacturaHandle
 		$invoice->payment_method = $object->array_options['options_metodopago'];
 		$invoice->currency = 'MXN';
 
-		echo '<pre>';var_dump($invoice);echo '</pre>';exit;
+		// echo '<pre>';var_dump($invoice);echo '</pre>';exit;
 		return $invoice;
 	}
 
-	public function createInvoice($object, $returned_format = 'nozip')
+	public function createInvoice(&$object, $returned_format = 'nozip')
 	{
 		global $user;
 		$object->fetch_optionals();
 
 		$invoice = $this->formatInvoice($object);
 		$res = $this->facturapi->Invoices->create($invoice);
-
-		if ($res->id) {
-			$object->array_options['options_idfacturapi'] = $res->id;
-			$object->array_options['options_uuid'] = $res->uuid;
-			$object->array_options['options_timbrada'] = 1;
-			$object->update($user);
-
-			// Save PDF
-			$this->recoverFiles($object, $returned_format);
+		if ($res->ok === false) {
+			setEventMessage($res->message, 'errors');
+			return false;
 		}
 
+		$object->array_options['options_idfacturapi'] = $res->id;
+		$object->array_options['options_uuid'] = $res->uuid;
+		$object->array_options['options_timbrada'] = 1;
+		$object->update($user);
+
+		// Save PDF
+		$this->recoverFiles($object, $returned_format);
 		return $res;
 	}
 

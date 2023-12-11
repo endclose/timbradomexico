@@ -666,11 +666,9 @@ if (empty($reshook)) {
 		}
 		// Timbra antes de validar
 		$resfacturapi = $facturapiHandler->createInvoice($object);
-
-		var_dump($resfacturapi);
 		
 
-		if (!$error) {
+		if (!$error && $resfacturapi) {
 			$result = $object->validate($user, '', $idwarehouse);
 			if ($result >= 0) {
 				// Define output language
@@ -688,8 +686,6 @@ if (empty($reshook)) {
 						$outputlangs->setDefaultLang($newlang);
 						$outputlangs->load('products');
 					}
-					$model = $object->model_pdf;
-
 					$ret = $object->fetch($id); // Reload to get new records
 
 					// $result = $object->generateDocument($model, $outputlangs, $hidedetails, $hidedesc, $hideref);

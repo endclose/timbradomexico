@@ -125,15 +125,15 @@ class ActionsTimbradoMexico
 			} else if ($action == 'add') {
 				$_POST['options_usocfdi'] = 'G03';
 				$_POST['options_metodopago'] = 'PUE';
-				switch (intval(GETPOST('type'))) {
-					case $object::TYPE_STANDARD:
-					case $object::TYPE_REPLACEMENT:
-					case $object::TYPE_DEPOSIT:
-						$_POST['options_tipocomprobante'] = 'I';
-						break;
-					case $object::TYPE_CREDIT_NOTE:
-						$_POST['options_tipocomprobante'] = 'E';
-				}
+				// switch (intval(GETPOST('type'))) {
+				// 	case $object::TYPE_STANDARD:
+				// 	case $object::TYPE_REPLACEMENT:
+				// 	case $object::TYPE_DEPOSIT:
+				// 		$_POST['options_tipocomprobante'] = 'I';
+				// 		break;
+				// 	case $object::TYPE_CREDIT_NOTE:
+				// 		$_POST['options_tipocomprobante'] = 'E';
+				// }
 			} else if ($action == 'builddoc') {
 				$action = ''; // Prevents the standard action to be executed
 				if ($object->array_options['options_timbrada'] == 1) {
