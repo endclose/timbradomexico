@@ -34,6 +34,11 @@ class FacturaHandle
 			$line->fetch_product();
 			// we saved the product on a variable because we need to fetch the optionals fields
 			$product = $line->product;
+			if (is_null($product)) {
+				setEventMessage('No se pueden usar productos/servicios libres en facturas.<br> Elimine o sutituya la partida ' . $line->rang . '[' . $line->desc . ']', 'errors');
+				return false;
+			}
+			$product->fetch_optionals();
 			$product->fetch_optionals();
 
 			$item_line = new stdClass();
@@ -61,6 +66,8 @@ class FacturaHandle
 		$invoice->payment_form = $object->array_options['options_formapago'];
 		$invoice->payment_method = $object->array_options['options_metodopago'];
 		$invoice->currency = 'MXN';
+		$invoice->series = 'A';
+		$invoice->folio_number = $object->ref;
 
 		// echo '<pre>';var_dump($invoice);echo '</pre>';exit;
 		return $invoice;
@@ -72,6 +79,9 @@ class FacturaHandle
 		$object->fetch_optionals();
 
 		$invoice = $this->formatInvoice($object);
+		if ($invoice === false) {
+			return false;
+		}
 		$res = $this->facturapi->Invoices->create($invoice);
 		if ($res->ok === false) {
 			setEventMessage($res->message, 'errors');
@@ -120,6 +130,9 @@ class FacturaHandle
 
 		$file_name = dol_sanitizeFileName($object->ref);
 		$dir = $dir = $conf->$object_type->multidir_output[$conf->entity] . '/' . $file_name;
+		if (!is_dir($dir)) {
+			dol_mkdir($dir);
+		}
 
 		$final_dir = $dir . '/' . $file_name . $extension;
 

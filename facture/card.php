@@ -664,13 +664,16 @@ if (empty($reshook)) {
 				}
 			}
 		}
-		// Timbra antes de validar
-		$resfacturapi = $facturapiHandler->createInvoice($object);
 		
-
-		if (!$error && $resfacturapi) {
+		
+		if (!$error) {
 			$result = $object->validate($user, '', $idwarehouse);
-			if ($result >= 0) {
+			
+			// Timbra despues de validar
+			if($result >= 0){
+				$resfacturapi = $facturapiHandler->createInvoice($object);
+			}
+			if ($result >= 0 && $resfacturapi) {
 				// Define output language
 				if (empty($conf->global->MAIN_DISABLE_PDF_AUTOUPDATE)) {
 					$outputlangs = $langs;
@@ -3039,6 +3042,10 @@ $now = dol_now();
 $title = $object->ref . " - " . $langs->trans('Card');
 if ($action == 'create') {
 	$title = $langs->trans("NewBill");
+	if(empty($origin) && empty($originid)){
+		setEventMessage('Las facturas se crean desde las ordenes.<br>Ingrese a la orden deseada y cree la factura desde allí.', 'warnings');
+		header('Location: '. DOL_URL_ROOT .'/commande/list.php?leftmenu=orders');
+	}
 }
 $help_url = "EN:Customers_Invoices|FR:Factures_Clients|ES:Facturas_a_clientes";
 
