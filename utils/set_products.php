@@ -1,5 +1,5 @@
 <?php
-
+ini_set('memory_limit', '1024M');
 if (!defined('NOREQUIRESOC')) {
 	define('NOREQUIRESOC', '1');
 }
@@ -50,5 +50,5 @@ while ($obj = $db->fetch_object($resql)) {
         echo $product->id. ' ' .$product->ref . " actualizado\n";
     }
 }
-
+$db->free($resql);
 $db->close();
