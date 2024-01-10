@@ -55,6 +55,8 @@ require_once DOL_DOCUMENT_ROOT . '/core/lib/date.lib.php';
 require_once DOL_DOCUMENT_ROOT . '/core/class/extrafields.class.php';
 require_once DOL_DOCUMENT_ROOT . '/custom/timbradomexico/lib/timbradomexico.lib.php';
 
+require_once DOL_DOCUMENT_ROOT . '/custom/timbradomexico/class/Cfdi.class.php';
+
 if (isModEnabled('commande')) {
 	require_once DOL_DOCUMENT_ROOT . '/commande/class/commande.class.php';
 }
@@ -664,16 +666,66 @@ if (empty($reshook)) {
 				}
 			}
 		}
-		
-		
+
+
 		if (!$error) {
 			$result = $object->validate($user, '', $idwarehouse);
-			
+
 			// Timbra despues de validar
-			if($result >= 0){
-				$resfacturapi = $facturapiHandler->createInvoice($object);
+			if ($result >= 0) {
+				$cfdi = new Cfdi(
+					'/Users/benjaminbailon/dev/testcfdiutils/certs/EKU9003173C9/EKU9003173C9.cer',
+					'/Users/benjaminbailon/dev/testcfdiutils/certs/EKU9003173C9/EKU9003173C9_password.key.pem'
+				);
+				$cfdi->serie = 'A';
+				$cfdi->folio = $object->ref;
+				$cfdi->fecha = dol_print_date($object->date, '%Y-%m-%dT%H:%M:%S','tzuser');
+				$cfdi->formaPago = $object->array_options['options_formapago'];
+				$cfdi->metodoPago = $object->array_options['options_metodopago'];
+				$cfdi->tipoDeComprobante = $object->array_options['options_tipocomprobante'];
+				$cfdi->lugarExpedicion = '34000';
+				$cfdi->moneda = $object->multicurrency_code;
+				$cfdi->condicionesDePago = '15 dias';
+				$cfdi->exportacion = $object->array_options['options_exportacion'];
+				$cfdi->createCfdi();
+				$cfdi->addReceptor(
+					'XAXX010101000',
+					'Publico en general',
+					$object->array_options['options_usocfdi'],
+					$object->array_options['options_regimenfiscalreceptor'],
+					'12345'	
+				);
+				foreach($object->lines as $line){
+					$line->fetch_product();
+					$cfdi->addConcepto([
+						"ObjetoImp" => $line->product->array_options['options_objetoimp'],
+						"ClaveProdServ" => $line->product->array_options['options_prodserv'],
+						"NoIdentificacion" => $line->product->ref,
+						"Cantidad" => $line->qty,
+						"ClaveUnidad" => $line->product->array_options['options_claveunidad'],
+						"Descripcion" => $line->libelle,
+						"ValorUnitario" => $line->multicurrency_subprice,
+						"Importe" => $line->multicurrency_total_ht,
+					], [
+						"Base" => $line->multicurrency_total_ht,
+						"Impuesto" => '002',
+						"TipoFactor" => 'Tasa',
+						"TasaOCuota" => '0.16',
+						"Importe" => $line->multicurrency_total_tva,
+					]);
+				}
+				$cfdi->sellarCfdi('12345678a');
+				$errors = $cfdi->validate();
+				if(count($errors) > 0){
+					foreach($errors as $error){
+						setEventMessages($error, null, 'errors');
+					}
+				}else{
+					$element = $object->element;
+					$cfdi->saveXml($conf->$element->multidir_output[$conf->entity].'/'.$object->ref);
+				}
 			}
-			if ($result >= 0 && $resfacturapi) {
+			if ($result >= 0 && count($errors)==0) {
 				// Define output language
 				if (empty($conf->global->MAIN_DISABLE_PDF_AUTOUPDATE)) {
 					$outputlangs = $langs;
@@ -3042,9 +3094,9 @@ $now = dol_now();
 $title = $object->ref . " - " . $langs->trans('Card');
 if ($action == 'create') {
 	$title = $langs->trans("NewBill");
-	if(empty($origin) && empty($originid)){
+	if (empty($origin) && empty($originid)) {
 		setEventMessage('Las facturas se crean desde las ordenes.<br>Ingrese a la orden deseada y cree la factura desde allí.', 'warnings');
-		header('Location: '. DOL_URL_ROOT .'/commande/list.php?leftmenu=orders');
+		header('Location: ' . DOL_URL_ROOT . '/commande/list.php?leftmenu=orders');
 	}
 }
 $help_url = "EN:Customers_Invoices|FR:Factures_Clients|ES:Facturas_a_clientes";
@@ -5576,7 +5628,7 @@ if ($action == 'create') {
 							print dolGetButtonAction($langs->trans('Modify'), '', 'default', '#', '', false, $params);
 						}
 					}
-				} else if(!$object->array_options['timbrada']) {
+				} else if (!$object->array_options['timbrada']) {
 					$params['attr']['title'] = $langs->trans('DisabledBecauseDispatchedInBookkeeping');
 					print dolGetButtonAction($langs->trans('Modify'), '', 'default', '#', '', false, $params);
 				}
