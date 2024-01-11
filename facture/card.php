@@ -748,6 +748,7 @@ if (empty($reshook)) {
 					}else{
 						$object->array_options['options_uuid'] = $stampResult->uuid();
 						$object->array_options['options_timbrada'] = 1;
+						$object->update($user);
 						$object->validate($user, '', $idwarehouse);
 
 						$finkokHandler->saveXmlTimbrado($conf->$element->multidir_output[$conf->entity].'/'.$object->ref, $stampResult->uuid());
