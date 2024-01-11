@@ -56,6 +56,8 @@ require_once DOL_DOCUMENT_ROOT . '/core/class/extrafields.class.php';
 require_once DOL_DOCUMENT_ROOT . '/custom/timbradomexico/lib/timbradomexico.lib.php';
 
 require_once DOL_DOCUMENT_ROOT . '/custom/timbradomexico/class/Cfdi.class.php';
+require_once DOL_DOCUMENT_ROOT . '/custom/timbradomexico/class/FinkokHandler.class.php';
+
 
 if (isModEnabled('commande')) {
 	require_once DOL_DOCUMENT_ROOT . '/commande/class/commande.class.php';
@@ -669,31 +671,39 @@ if (empty($reshook)) {
 
 
 		if (!$error) {
-			$result = $object->validate($user, '', $idwarehouse);
+
+			$object->fetch_thirdparty();
 
 			// Timbra despues de validar
-			if ($result >= 0) {
+			if ($object->array_options['options_timbrada'] == 0 &&  empty($object->array_options['options_uuid'])) {
+				//TODO Change to values stored on database
 				$cfdi = new Cfdi(
 					'/Users/benjaminbailon/dev/testcfdiutils/certs/EKU9003173C9/EKU9003173C9.cer',
-					'/Users/benjaminbailon/dev/testcfdiutils/certs/EKU9003173C9/EKU9003173C9_password.key.pem'
+					'/Users/benjaminbailon/dev/testcfdiutils/certs/EKU9003173C9/EKU9003173C9_password.key.pem',
+					'Tier299S?'
 				);
 				$cfdi->serie = 'A';
-				$cfdi->folio = $object->ref;
+				$cfdi->folio = $object->getNextNumRef($mysoc);
 				$cfdi->fecha = dol_print_date($object->date, '%Y-%m-%dT%H:%M:%S','tzuser');
 				$cfdi->formaPago = $object->array_options['options_formapago'];
 				$cfdi->metodoPago = $object->array_options['options_metodopago'];
 				$cfdi->tipoDeComprobante = $object->array_options['options_tipocomprobante'];
-				$cfdi->lugarExpedicion = '34000';
+				$cfdi->lugarExpedicion = '20928';
 				$cfdi->moneda = $object->multicurrency_code;
 				$cfdi->condicionesDePago = '15 dias';
 				$cfdi->exportacion = $object->array_options['options_exportacion'];
 				$cfdi->createCfdi();
+				
+				$cfdi->addEmisor(
+					$conf->global->TIMBRADOMEXICO_NOMBRE_EMISOR, 
+					$conf->global->TIMBRADOMEXICO_REGIMEN_FISCAL_EMISOR	
+				);
 				$cfdi->addReceptor(
-					'XAXX010101000',
-					'Publico en general',
+					$object->thirdparty->idprof1,
+					$object->thirdparty->name,
 					$object->array_options['options_usocfdi'],
 					$object->array_options['options_regimenfiscalreceptor'],
-					'12345'	
+					$object->thirdparty->zip,
 				);
 				foreach($object->lines as $line){
 					$line->fetch_product();
@@ -710,11 +720,12 @@ if (empty($reshook)) {
 						"Base" => $line->multicurrency_total_ht,
 						"Impuesto" => '002',
 						"TipoFactor" => 'Tasa',
-						"TasaOCuota" => '0.16',
+						"TasaOCuota" => '0.160000', //TODO Change to values from the object line
 						"Importe" => $line->multicurrency_total_tva,
 					]);
 				}
-				$cfdi->sellarCfdi('12345678a');
+				//TODO Change to values stored on database
+				$cfdi->sellarCfdi('Tier299S?');
 				$errors = $cfdi->validate();
 				if(count($errors) > 0){
 					foreach($errors as $error){
@@ -722,7 +733,26 @@ if (empty($reshook)) {
 					}
 				}else{
 					$element = $object->element;
-					$cfdi->saveXml($conf->$element->multidir_output[$conf->entity].'/'.$object->ref);
+					$cfdiToStamp = $cfdi->getXml();
+					//TODO Change to values stored on database
+					$finkokHandler = new FinkokHandler(
+						'benjamin.bailon@outlook.com',
+						'Tier299S?',
+						'dev'
+					);
+					$stampResult = $finkokHandler->stamp($cfdiToStamp);
+					if($stampResult->hasAlerts()){
+						foreach($stampResult->alerts() as $alert){
+							setEventMessages($alert->message(), null, 'errors');
+						}
+					}else{
+						$object->array_options['options_uuid'] = $stampResult->uuid();
+						$object->array_options['options_timbrada'] = 1;
+						$object->validate($user, '', $idwarehouse);
+
+						$finkokHandler->saveXmlTimbrado($conf->$element->multidir_output[$conf->entity].'/'.$object->ref, $stampResult->uuid());
+						setEventMessages('Timbrado exitoso UUID: '. $stampResult->uuid() , null);
+					}
 				}
 			}
 			if ($result >= 0 && count($errors)==0) {
@@ -3094,10 +3124,6 @@ $now = dol_now();
 $title = $object->ref . " - " . $langs->trans('Card');
 if ($action == 'create') {
 	$title = $langs->trans("NewBill");
-	if (empty($origin) && empty($originid)) {
-		setEventMessage('Las facturas se crean desde las ordenes.<br>Ingrese a la orden deseada y cree la factura desde allí.', 'warnings');
-		header('Location: ' . DOL_URL_ROOT . '/commande/list.php?leftmenu=orders');
-	}
 }
 $help_url = "EN:Customers_Invoices|FR:Factures_Clients|ES:Facturas_a_clientes";
 
@@ -5606,33 +5632,33 @@ if ($action == 'create') {
 				)
 			);
 			// Editer une facture deja validee, sans paiement effectue et pas exporte en compta
-			if ($object->statut == Facture::STATUS_VALIDATED) {
-				// We check if lines of invoice are not already transfered into accountancy
-				$ventilExportCompta = $object->getVentilExportCompta();
+			// if ($object->statut == Facture::STATUS_VALIDATED) {
+			// 	// We check if lines of invoice are not already transfered into accountancy
+			// 	$ventilExportCompta = $object->getVentilExportCompta();
 
-				if ($ventilExportCompta == 0) {
-					if (!empty($conf->global->INVOICE_CAN_BE_EDITED_EVEN_IF_PAYMENT_DONE) || ($resteapayer == price2num($object->total_ttc, 'MT', 1) && empty($object->paye))) {
-						if (!$objectidnext && $object->is_last_in_cycle()) {
-							if ($usercanunvalidate) {
-								$params['attr']['title'] = '';
-								print dolGetButtonAction($langs->trans('Modify'), '', 'default', $_SERVER['PHP_SELF'] . '?facid=' . $object->id . '&action=modif&token=' . newToken(), '', true, $params);
-							} else {
-								$params['attr']['title'] = $langs->trans('NotEnoughPermissions');
-								print dolGetButtonAction($langs->trans('Modify'), '', 'default', $_SERVER['PHP_SELF'] . '?facid=' . $object->id . '&action=modif&token=' . newToken(), '', false, $params);
-							}
-						} elseif (!$object->is_last_in_cycle()) {
-							$params['attr']['title'] = $langs->trans('NotLastInCycle');
-							print dolGetButtonAction($langs->trans('Modify'), '', 'default', '#', '', false, $params);
-						} else {
-							$params['attr']['title'] = $langs->trans('DisabledBecauseReplacedInvoice');
-							print dolGetButtonAction($langs->trans('Modify'), '', 'default', '#', '', false, $params);
-						}
-					}
-				} else if (!$object->array_options['timbrada']) {
-					$params['attr']['title'] = $langs->trans('DisabledBecauseDispatchedInBookkeeping');
-					print dolGetButtonAction($langs->trans('Modify'), '', 'default', '#', '', false, $params);
-				}
-			}
+			// 	if ($ventilExportCompta == 0) {
+			// 		if (!empty($conf->global->INVOICE_CAN_BE_EDITED_EVEN_IF_PAYMENT_DONE) || ($resteapayer == price2num($object->total_ttc, 'MT', 1) && empty($object->paye))) {
+			// 			if (!$objectidnext && $object->is_last_in_cycle()) {
+			// 				if ($usercanunvalidate) {
+			// 					$params['attr']['title'] = '';
+			// 					print dolGetButtonAction($langs->trans('Modify'), '', 'default', $_SERVER['PHP_SELF'] . '?facid=' . $object->id . '&action=modif&token=' . newToken(), '', true, $params);
+			// 				} else {
+			// 					$params['attr']['title'] = $langs->trans('NotEnoughPermissions');
+			// 					print dolGetButtonAction($langs->trans('Modify'), '', 'default', $_SERVER['PHP_SELF'] . '?facid=' . $object->id . '&action=modif&token=' . newToken(), '', false, $params);
+			// 				}
+			// 			} elseif (!$object->is_last_in_cycle()) {
+			// 				$params['attr']['title'] = $langs->trans('NotLastInCycle');
+			// 				print dolGetButtonAction($langs->trans('Modify'), '', 'default', '#', '', false, $params);
+			// 			} else {
+			// 				$params['attr']['title'] = $langs->trans('DisabledBecauseReplacedInvoice');
+			// 				print dolGetButtonAction($langs->trans('Modify'), '', 'default', '#', '', false, $params);
+			// 			}
+			// 		}
+			// 	} else if ($object->array_options['timbrada']) {
+			// 		$params['attr']['title'] = $langs->trans('DisabledBecauseDispatchedInBookkeeping');
+			// 		print dolGetButtonAction($langs->trans('Modify'), '', 'default', '#', '', false, $params);
+			// 	}
+			// }
 
 			$discount = new DiscountAbsolute($db);
 			$result = $discount->fetch(0, $object->id);

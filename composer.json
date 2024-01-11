@@ -1,6 +1,7 @@
 {
     "require": {
         "facturapi/facturapi-php": "^2.4",
-        "eclipxe/cfdiutils": "^2.25"
+        "eclipxe/cfdiutils": "^2.25",
+        "phpcfdi/finkok": "^0.5.3"
     }
 }

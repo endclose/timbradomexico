@@ -137,7 +137,25 @@ class ActionsTimbradoMexico
 			} else if ($action == 'builddoc') {
 				$action = ''; // Prevents the standard action to be executed
 				if ($object->array_options['options_timbrada'] == 1) {
-					$handler->recoverFiles($object);
+					require_once DOL_DOCUMENT_ROOT . '/custom/timbradomexico/class/FinkokHandler.class.php';
+
+					if(empty($object->array_options['options_uuid'])){
+						setEventMessage('La factura aun no se timbra, no se puede generar el XML', 'errors');
+						return 0;
+					}
+					if(empty($object->thirdparty)){
+						$object->fetch_thirdparty();
+					}
+					//TODO change this to variables stored on the database
+					$finkokHandler = new FinkokHandler('benjamin.bailon@outlook.com', 'Tier299S?', 'development');
+					//TODO change this to the real rfc
+					$result = $finkokHandler->recoverXmlTimbrado($object->array_options['options_uuid'], 'EKU9003173C9');
+					if($result === true){
+						$finkokHandler->saveXmlTimbrado($conf->facture->multidir_output[$conf->entity].'/'.$object->ref, $object->array_options['options_uuid']);
+						setEventMessage('XML recuperado correctamente');
+					}else{
+						setEventMessage('Error al recuperar el XML: '.$result, 'errors');
+					}
 				}
 			}else if($action == 'update_extras' && GETPOST('attribute') == 'tipocomprobante'){
 				setEventMessage('El tipo de comprobante no puede ser modificado', 'errors');

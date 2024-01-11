@@ -1,5 +1,5 @@
 <?php
-require '../vendor/autoload.php';
+require_once '../vendor/autoload.php';
 
 use CfdiUtils\CfdiCreator40;
 use CfdiUtils\Certificado\Certificado;
@@ -16,9 +16,19 @@ class Cfdi
     private $certificado;
     private $creator;
     private $comprobante;
+    private $password_cert;
 
-    private $emisor = array();
-    private $receptor = array();
+    private $emisor = array(
+        'Nombre' => '',
+        'RegimenFiscal' => ''
+    );
+    private $receptor = array(
+        'Rfc' => '',
+        'Nombre' => '',
+        'UsoCFDI' => '',
+        'RegimenFiscalReceptor' => '',
+        'DomicilioFiscalReceptor' => ''
+    );
 
     private $conceptos = array();
 
@@ -40,17 +50,14 @@ class Cfdi
      * @param string $pathKey Ruta del archivo de la llave privada.
      * @param string $regimenFiscal Régimen fiscal del emisor (opcional, valor por defecto: '601').
      */
-    public function __construct($pathCertificado, $pathKey, $regimenFiscal = '601')
+    public function __construct($pathCertificado, $pathKey,$password_cert)
     {
         $this->pathCertificado = $pathCertificado;
         $this->pathKey = $pathKey;
+        $this->password_cert = $password_cert;
 
         $this->certificado = new Certificado($this->pathCertificado);
 
-        $this->emisor = array(
-            'Nombre' => $this->certificado->getName(),
-            'RegimenFiscal' => $regimenFiscal
-        );
     }
 
     /**
@@ -58,20 +65,24 @@ class Cfdi
      */
     public function createCfdi()
     {
-        $this->creator = new CfdiCreator40(array(
-            'Serie' => $this->serie,
-            'Folio' => $this->folio,
-            'Fecha' => $this->fecha,
-            'FormaPago' => $this->formaPago,
-            'CondicionesDePago' => $this->condicionesDePago,
-            'Moneda' => $this->moneda,
-            'TipoDeComprobante' => $this->tipoDeComprobante,
-            'MetodoPago' => $this->metodoPago,
-            'LugarExpedicion' => $this->lugarExpedicion,
-            'Exportacion' => $this->exportacion
-        ), $this->certificado);
-        $this->comprobante = $this->creator->comprobante();
-        $this->comprobante->addEmisor($this->emisor);
+        try {
+            $this->creator = new CfdiCreator40(array(
+                'Serie' => $this->serie,
+                'Folio' => $this->folio,
+                'Fecha' => $this->fecha,
+                'FormaPago' => $this->formaPago,
+                'CondicionesDePago' => $this->condicionesDePago,
+                'Moneda' => $this->moneda,
+                'TipoDeComprobante' => $this->tipoDeComprobante,
+                'MetodoPago' => $this->metodoPago,
+                'LugarExpedicion' => $this->lugarExpedicion,
+                'Exportacion' => $this->exportacion
+            ), $this->certificado);
+            $this->comprobante = $this->creator->comprobante();
+        } catch (Exception $e) {
+            // Handle exception
+            echo 'Error creating CFDI: ' . $e->getMessage();
+        }
     }
 
     /**
@@ -85,14 +96,29 @@ class Cfdi
      */
     function addReceptor($Rfc, $Nombre, $UsoCFDI, $RegimenFiscalReceptor, $DomicilioFiscalReceptor)
     {
-        $this->receptor = array(
-            'Rfc' => $Rfc,
-            'Nombre' => $Nombre,
-            'UsoCFDI' => $UsoCFDI,
-            'RegimenFiscalReceptor' => $RegimenFiscalReceptor,
-            'DomicilioFiscalReceptor' => $DomicilioFiscalReceptor
-        );
-        $this->comprobante->addReceptor($this->receptor);
+        try {
+            $this->receptor['Rfc'] = $Rfc;
+            $this->receptor['Nombre'] = $Nombre;
+            $this->receptor['UsoCFDI'] = $UsoCFDI;
+            $this->receptor['RegimenFiscalReceptor'] = $RegimenFiscalReceptor;
+            $this->receptor['DomicilioFiscalReceptor'] = $DomicilioFiscalReceptor;
+            $this->comprobante->addReceptor($this->receptor);
+        } catch (Exception $e) {
+            // Handle exception
+            echo 'Error adding receptor: ' . $e->getMessage();
+        }
+    }
+
+    function addEmisor($Nombre, $RegimenFiscal)
+    {
+        try {
+            $this->emisor['Nombre'] = $Nombre;
+            $this->emisor['RegimenFiscal'] = $RegimenFiscal;
+            $this->comprobante->addEmisor($this->emisor);
+        } catch (Exception $e) {
+            // Handle exception
+            echo 'Error adding emisor: ' . $e->getMessage();
+        }
     }
 
     /**
@@ -103,9 +129,14 @@ class Cfdi
      */
     public function addConcepto($concepto, $traslado = array())
     {
-        $this->conceptos[] = $concepto;
-        $this->comprobante->addConcepto($concepto)->addTraslado($traslado);
-        $this->creator->addSumasConceptos();
+        try {
+            $this->conceptos[] = $concepto;
+            $this->comprobante->addConcepto($concepto)->addTraslado($traslado);
+            $this->creator->addSumasConceptos();
+        } catch (Exception $e) {
+            // Handle exception
+            echo 'Error adding concepto: ' . $e->getMessage();
+        }
     }
 
     /**
@@ -113,10 +144,15 @@ class Cfdi
      *
      * @param string $password Contraseña de la llave privada.
      */
-    public function sellarCfdi($password)
+    public function sellarCfdi()
     {
-        $this->creator->moveSatDefinitionsToComprobante();
-        $this->creator->addSello('file://' . $this->pathKey, $password);
+        try {
+            $this->creator->moveSatDefinitionsToComprobante();
+            $this->creator->addSello('file://' . $this->pathKey, $this->password_cert);
+        } catch (Exception $e) {
+            // Handle exception
+            echo 'Error sealing CFDI: ' . $e->getMessage();
+        }
     }
 
     /**
@@ -126,12 +162,17 @@ class Cfdi
      */
     public function validate()
     {
-        $errors = array();
-        $assets = $this->creator->validate();
-        foreach ($assets->errors() as $error) {
-            $errors[] = $error->getTitle() . ' ' . $error->getExplanation();
+        try {
+            $errors = array();
+            $assets = $this->creator->validate();
+            foreach ($assets->errors() as $error) {
+                $errors[] = $error->getTitle() . ' ' . $error->getExplanation();
+            }
+            return $errors;
+        } catch (Exception $e) {
+            // Handle exception
+            echo 'Error validating CFDI: ' . $e->getMessage();
         }
-        return $errors;
     }
 
     /**
@@ -141,7 +182,12 @@ class Cfdi
      */
     public function getXml()
     {
-        return $this->creator->asXml();
+        try {
+            return $this->creator->asXml();
+        } catch (Exception $e) {
+            // Handle exception
+            echo 'Error getting XML: ' . $e->getMessage();
+        }
     }
 
     /**
@@ -152,9 +198,14 @@ class Cfdi
      */
     public function saveXml($path, $name = '')
     {
-        if ($name == '') {
-            $name = $this->serie . '_' . $this->folio;
+        try {
+            if ($name == '') {
+                $name = $this->serie . '_' . $this->folio;
+            }
+            $this->creator->saveXml($path . '/' . $name . '.xml');
+        } catch (Exception $e) {
+            // Handle exception
+            echo 'Error saving XML: ' . $e->getMessage();
         }
-        $res = $this->creator->saveXml($path . '/' . $name . '.xml');
     }
 }
