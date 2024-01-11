@@ -678,8 +678,8 @@ if (empty($reshook)) {
 			if ($object->array_options['options_timbrada'] == 0 &&  empty($object->array_options['options_uuid'])) {
 				//TODO Change to values stored on database
 				$cfdi = new Cfdi(
-					'/Users/benjaminbailon/dev/testcfdiutils/certs/EKU9003173C9/EKU9003173C9.cer',
-					'/Users/benjaminbailon/dev/testcfdiutils/certs/EKU9003173C9/EKU9003173C9_password.key.pem',
+					DOL_DOCUMENT_ROOT . '/custom/timbradomexico/facture/certs/EKU9003173C9/EKU9003173C9.cer.pem',
+					DOL_DOCUMENT_ROOT . '/custom/timbradomexico/facture/certs/EKU9003173C9/EKU9003173C9.key.pem',
 					'Tier299S?'
 				);
 				$cfdi->serie = 'A';
