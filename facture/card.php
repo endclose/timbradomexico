@@ -676,7 +676,7 @@ if (empty($reshook)) {
 		);
 
 		$res = $cfdi->createFromObject($object, $conf);
-		if($res){
+		if($res === true){
 			$xml = $cfdi->getXml();
 			file_put_contents('cfdi.xml', $xml);
 			$cfdi->setFinkokCredentials('benjamin.bailon@outlook.com', 'Tier299S?', 'dev');
@@ -686,9 +686,16 @@ if (empty($reshook)) {
 					setEventMessages($alert->message(), null, 'errors');
 				}
 			}else{
-				setEventMessage('Timbrado exitoso', null, 'errors');
-			}
+				setEventMessage('Timbrado exitoso');
+				$object->array_options['options_uuid'] = $stamp_result->uuid();
+				$object->array_options['options_timbrada'] = 1;
 
+				$object->update($user, 1);
+				$object->validate($user);
+
+			}
+		}else{
+			setEventMessage($res,'errors');
 		}
 
 	} elseif ($action == 'confirm_modif' && $usercanunvalidate) {

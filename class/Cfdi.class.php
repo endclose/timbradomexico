@@ -219,14 +219,14 @@ class Cfdi
     }
     public function createFromObject( Facture $object, Conf $conf){
         try{
-            if(empty($conf->global->TIMBRADOMEXICO_EMISOR_RFC) || empty($conf->global->TIMBRADOMEXICO_EMISOR_RAZON_SOCIAL)){
-                throw new Exception('No se ha configurado el emisor');
+            if(empty($conf->global->TIMBRADOMEXICO_EMISOR_REGIMEN) || empty($conf->global->TIMBRADOMEXICO_EMISOR_RAZON_SOCIAL)){
+                return 'No se ha configurado el emisor';
             }
             $object->fetch_thirdparty();
 
             $this->serie = 'A'; // TODO change this to a variable configurable from dolibarr
             $this->folio = str_contains($object->ref,'PROV') ? $object->getNextNumRef($conf->mysoc) : $object->ref;
-            $this->fecha = date('Y-m-d\TH:i:s');
+            $this->fecha = dol_print_date($object->date_creation, '%Y-%m-%dT%H:%M:%S','tzuser');
             $this->formaPago = $object->array_options['options_formapago'];
             $this->metodoPago = $object->array_options['options_metodopago'];
             $this->tipoDeComprobante = $object->array_options['options_tipocomprobante'];
@@ -271,8 +271,9 @@ class Cfdi
                     $impuestos = array(
                         'Impuesto' => '002',
                         'TipoFactor' => 'Tasa',
-                        'TasaOCuota' => $line->tva_tx/100,
-                        'Importe' => $line->total_tva
+                        'TasaOCuota' => number_format($line->tva_tx/100, 6, '.', ''),
+                        'Base'=> number_format($line->total_ht, 2, '.', ''),
+                        'Importe' => number_format($line->total_tva,2, '.', '')
                     );
                     $this->addConcepto($concepto, $impuestos);
                 }else{
