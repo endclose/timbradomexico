@@ -157,7 +157,13 @@ class modTimbradoMexico extends DolibarrModules
 		// Example: $this->const=array(1 => array('TIMBRADOMEXICO_MYNEWCONST1', 'chaine', 'myvalue', 'This is a constant to add', 1),
 		//                             2 => array('TIMBRADOMEXICO_MYNEWCONST2', 'chaine', 'myvalue', 'This is another constant to add', 0, 'current', 1)
 		// );
-		$this->const = array();
+		$this->const = array(
+			1 => array('TIMBRADOMEXICO_EMISOR_REGIMEN', 'chaine', '', 'RFC del emisor', 0),
+			2 => array('TIMBRADOMEXICO_EMISOR_RAZON_SOCIAL', 'chaine', '', 'Razón social del emisor', 0),
+			3 => array('TIMBRADOMEXICO_PATH_CERTIFICADO', 'chaine', '', 'Ruta del certificado', 0),
+			4 => array('TIMBRADOMEXICO_PATH_LLAVE_PRIVADA', 'chaine', '', 'Ruta de la llave privada', 0),
+			5 => array('TIMBRADOMEXICO_LLAVE_PRIVADA_PASSWORD', 'chaine', '', 'Contraseña de la llave privada', 0),
+		);
 
 		// Some keys to add into the overwriting translation tables
 		/*$this->overwrite_translation = array(

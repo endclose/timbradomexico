@@ -107,8 +107,6 @@ class ActionsTimbradoMexico
 
 		/* print_r($parameters); print_r($object); echo "action: " . $action; */
 		if (in_array($parameters['currentcontext'], array('invoicecard'))) {    // do something only for the context 'somecontext1' or 'somecontext2
-			include_once DOL_DOCUMENT_ROOT . '/custom/timbradomexico/lib/timbradomexico.lib.php';
-			$handler = new FacturaHandle('sk_test_kDGr5jYO4NyAP10R9ByRPJWAODlBb8eQmZEoVdJXKv');
 			if ($action == 'timbrar' && $object->array_options['options_timbrada'] == 0) {
 				$invoice = $handler->createInvoice($object);
 				if (isset($invoice->ok)) {

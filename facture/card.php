@@ -37,6 +37,8 @@
  * \brief 	Page to create/see an invoice
  */
 
+use Stripe\Util\Set;
+
 // Libraries
 require '../../../main.inc.php';
 require_once DOL_DOCUMENT_ROOT . '/compta/facture/class/facture.class.php';
@@ -117,7 +119,6 @@ $usehm = (!empty($conf->global->MAIN_USE_HOURMIN_IN_DATE_RANGE) ? $conf->global-
 
 $object = new Facture($db);
 $extrafields = new ExtraFields($db);
-$facturapiHandler = new FacturaHandle('sk_test_kDGr5jYO4NyAP10R9ByRPJWAODlBb8eQmZEoVdJXKv');
 
 // Fetch optionals attributes and labels
 $extrafields->fetch_name_optionals_label($object->table_element);
@@ -668,125 +669,28 @@ if (empty($reshook)) {
 				}
 			}
 		}
+		$cfdi = new Cfdi(
+			$conf->global->TIMBRADOMEXICO_PATH_CERTIFICADO,
+			$conf->global->TIMBRADOMEXICO_PATH_LLAVE_PRIVADA,
+			$conf->global->TIMBRADOMEXICO_LLAVE_PRIVADA_PASSWORD
+		);
 
-
-		if (!$error) {
-
-			$object->fetch_thirdparty();
-
-			// Timbra despues de validar
-			if ($object->array_options['options_timbrada'] == 0 &&  empty($object->array_options['options_uuid'])) {
-				//TODO Change to values stored on database
-				$cfdi = new Cfdi(
-					DOL_DOCUMENT_ROOT . '/custom/timbradomexico/facture/certs/EKU9003173C9/EKU9003173C9.cer',
-					DOL_DOCUMENT_ROOT . '/custom/timbradomexico/facture/certs/EKU9003173C9/EKU9003173C9.key.pem',
-					'Tier299S?'
-				);
-				$cfdi->serie = 'A';
-				$cfdi->folio = $object->getNextNumRef($mysoc);
-				$cfdi->fecha = dol_print_date($object->date, '%Y-%m-%dT%H:%M:%S','tzuser');
-				$cfdi->formaPago = $object->array_options['options_formapago'];
-				$cfdi->metodoPago = $object->array_options['options_metodopago'];
-				$cfdi->tipoDeComprobante = $object->array_options['options_tipocomprobante'];
-				$cfdi->lugarExpedicion = '20928';
-				$cfdi->moneda = $object->multicurrency_code;
-				$cfdi->condicionesDePago = '15 dias';
-				$cfdi->exportacion = $object->array_options['options_exportacion'];
-				$cfdi->createCfdi();
-				
-				$cfdi->addEmisor(
-					$conf->global->TIMBRADOMEXICO_NOMBRE_EMISOR, 
-					$conf->global->TIMBRADOMEXICO_REGIMEN_FISCAL_EMISOR	
-				);
-				$cfdi->addReceptor(
-					$object->thirdparty->idprof1,
-					$object->thirdparty->name,
-					$object->array_options['options_usocfdi'],
-					$object->array_options['options_regimenfiscalreceptor'],
-					$object->thirdparty->zip,
-				);
-				foreach($object->lines as $line){
-					$line->fetch_product();
-					$cfdi->addConcepto([
-						"ObjetoImp" => $line->product->array_options['options_objetoimp'],
-						"ClaveProdServ" => $line->product->array_options['options_prodserv'],
-						"NoIdentificacion" => $line->product->ref,
-						"Cantidad" => $line->qty,
-						"ClaveUnidad" => $line->product->array_options['options_claveunidad'],
-						"Descripcion" => $line->libelle,
-						"ValorUnitario" => $line->multicurrency_subprice,
-						"Importe" => $line->multicurrency_total_ht,
-					], [
-						"Base" => $line->multicurrency_total_ht,
-						"Impuesto" => '002',
-						"TipoFactor" => 'Tasa',
-						"TasaOCuota" => '0.160000', //TODO Change to values from the object line
-						"Importe" => $line->multicurrency_total_tva,
-					]);
+		$res = $cfdi->createFromObject($object, $conf);
+		if($res){
+			$xml = $cfdi->getXml();
+			file_put_contents('cfdi.xml', $xml);
+			$cfdi->setFinkokCredentials('benjamin.bailon@outlook.com', 'Tier299S?', 'dev');
+			$stamp_result = $cfdi->stamp($xml);
+			if($stamp_result->hasAlerts()){
+				foreach($stamp_result->alerts() as $alert){
+					setEventMessages($alert->message(), null, 'errors');
 				}
-				//TODO Change to values stored on database
-				$cfdi->sellarCfdi('Tier299S?');
-				$errors = $cfdi->validate();
-				if(count($errors) > 0){
-					foreach($errors as $error){
-						setEventMessages($error, null, 'errors');
-					}
-				}else{
-					$element = $object->element;
-					$cfdiToStamp = $cfdi->getXml();
-					//TODO Change to values stored on database
-					$finkokHandler = new FinkokHandler(
-						'benjamin.bailon@outlook.com',
-						'Tier299S?',
-						'dev'
-					);
-					$stampResult = $finkokHandler->stamp($cfdiToStamp);
-					if($stampResult->hasAlerts()){
-						foreach($stampResult->alerts() as $alert){
-							setEventMessages($alert->message(), null, 'errors');
-						}
-					}else{
-						$object->array_options['options_uuid'] = $stampResult->uuid();
-						$object->array_options['options_timbrada'] = 1;
-						$object->update($user);
-						$object->validate($user, '', $idwarehouse);
-
-						$finkokHandler->saveXmlTimbrado($conf->$element->multidir_output[$conf->entity].'/'.$object->ref, $stampResult->uuid());
-						setEventMessages('Timbrado exitoso UUID: '. $stampResult->uuid() , null);
-					}
-				}
+			}else{
+				setEventMessage('Timbrado exitoso', null, 'errors');
 			}
-			if ($result >= 0 && count($errors)==0) {
-				// Define output language
-				if (empty($conf->global->MAIN_DISABLE_PDF_AUTOUPDATE)) {
-					$outputlangs = $langs;
-					$newlang = '';
-					if (getDolGlobalInt('MAIN_MULTILANGS') && empty($newlang) && GETPOST('lang_id', 'aZ09')) {
-						$newlang = GETPOST('lang_id', 'aZ09');
-					}
-					if (getDolGlobalInt('MAIN_MULTILANGS') && empty($newlang)) {
-						$newlang = $object->thirdparty->default_lang;
-					}
-					if (!empty($newlang)) {
-						$outputlangs = new Translate("", $conf);
-						$outputlangs->setDefaultLang($newlang);
-						$outputlangs->load('products');
-					}
-					$ret = $object->fetch($id); // Reload to get new records
 
-					// $result = $object->generateDocument($model, $outputlangs, $hidedetails, $hidedesc, $hideref);
-					if ($result < 0) {
-						setEventMessages($object->error, $object->errors, 'errors');
-					}
-				}
-			} else {
-				if (count($object->errors)) {
-					setEventMessages(null, $object->errors, 'errors');
-				} else {
-					setEventMessages($object->error, $object->errors, 'errors');
-				}
-			}
 		}
+
 	} elseif ($action == 'confirm_modif' && $usercanunvalidate) {
 		// Go back to draft status (unvalidate)
 		$idwarehouse = GETPOST('idwarehouse', 'int');
@@ -889,17 +793,37 @@ if (empty($reshook)) {
 			setEventMessages($langs->trans("ErrorFieldRequired", $langs->transnoentitiesnoconv("Reason")), null, 'errors');
 		}
 	} elseif ($action == 'confirm_canceled' && $confirm == 'yes') {
-		// Classify "abandoned"
-		$object->fetch($id);
-		$close_code = GETPOST("close_code", 'restricthtml');
-		$close_note = GETPOST("close_note", 'restricthtml');
-		if ($close_code) {
-			$result = $object->setCanceled($user, $close_code, $close_note);
-			if ($result < 0) {
-				setEventMessages($object->error, $object->errors, 'errors');
+		if ($object->statut != $object::STATUS_ABANDONED) {
+			$finkokHandler = new FinkokHandler(
+				'benjamin.bailon@outlook.com', //TODO Change to values stored on database
+				'Tier299S?', //TODO Change to values stored on database
+				'dev'
+			);
+			$finkokHandler->setCredential(
+				DOL_DOCUMENT_ROOT . '/custom/timbradomexico/facture/certs/EKU9003173C9/EKU9003173C9.cer', //TODO Change to values stored on database
+				DOL_DOCUMENT_ROOT . '/custom/timbradomexico/facture/certs/EKU9003173C9/EKU9003173C9.key.pem', //TODO Change to values stored on database
+				'Tier299S?' //TODO Change to values stored on database
+			);
+			$result = $finkokHandler->cancel($object->array_options['options_uuid']);
+			if (is_string($result)) {
+				setEventMessages($result, null, 'errors');
+			} else {
+				$acuse = $result->voucher();
+				$document = $result->documents()->first();
+
+				if ($acuse) {
+					var_dump($acuse);
+				}
+
+				if ($document->documentStatus() == '201') {
+					$object->setCanceled($user);
+					setEventMessage($document->documentStatus() . ' ' . $document->cancellationStatus());
+				} else {
+					setEventMessage($document->documentStatus() . ' ' . $document->cancellationStatus(), 'errors');
+				}
 			}
 		} else {
-			setEventMessages($langs->trans("ErrorFieldRequired", $langs->transnoentitiesnoconv("Reason")), null, 'errors');
+			setEventMessage('La factura ya se encuentra cancelada', null, 'errors');
 		}
 	} elseif ($action == 'confirm_converttoreduc' && $confirm == 'yes' && $usercancreate) {
 		// Convertir en reduc
@@ -4448,34 +4372,15 @@ if ($action == 'create') {
 
 	// Confirmation du classement abandonne
 	if ($action == 'canceled') {
-		// S'il y a une facture de remplacement pas encore validee (etat brouillon),
-		// on ne permet pas de classer abandonner la facture.
-		if ($objectidnext) {
-			$facturereplacement = new Facture($db);
-			$facturereplacement->fetch($objectidnext);
-			$statusreplacement = $facturereplacement->statut;
-		}
-		if ($objectidnext && $statusreplacement == 0) {
-			print '<div class="error">' . $langs->trans("ErrorCantCancelIfReplacementInvoiceNotValidated") . '</div>';
-		} else {
-			// Code
-			$close[1]['code'] = 'badcustomer';
-			$close[2]['code'] = 'abandon';
-			// Help
-			$close[1]['label'] = $langs->trans("ConfirmClassifyPaidPartiallyReasonBadCustomerDesc");
-			$close[2]['label'] = $langs->trans("ConfirmClassifyAbandonReasonOtherDesc");
-			// Texte
-			$close[1]['reason'] = $form->textwithpicto($langs->transnoentities("ConfirmClassifyPaidPartiallyReasonBadCustomer", $object->ref), $close[1]['label'], 1);
-			$close[2]['reason'] = $form->textwithpicto($langs->transnoentities("ConfirmClassifyAbandonReasonOther"), $close[2]['label'], 1);
-			// arrayreasons
-			$arrayreasons[$close[1]['code']] = $close[1]['reason'];
-			$arrayreasons[$close[2]['code']] = $close[2]['reason'];
-
-			// Cree un tableau formulaire
-			$formquestion = array('text' => $langs->trans("ConfirmCancelBillQuestion"), array('type' => 'radio', 'name' => 'close_code', 'label' => $langs->trans("Reason"), 'values' => $arrayreasons), array('type' => 'text', 'name' => 'close_note', 'label' => $langs->trans("Comment"), 'value' => '', 'morecss' => 'minwidth300'));
-
-			$formconfirm = $form->formconfirm($_SERVER['PHP_SELF'] . '?facid=' . $object->id, $langs->trans('CancelBill'), $langs->trans('ConfirmCancelBill', $object->ref), 'confirm_canceled', $formquestion, "yes", 1, 270);
-		}
+		$formconfirm = $form->formconfirm(
+			$_SERVER["PHP_SELF"] . '?facid=' . $object->id,
+			'Cancelar factura',
+			'¿Está seguro de que desea cancelar la factura ' . $object->ref . '?',
+			'confirm_canceled',
+			'',
+			"yes",
+			1
+		);
 	}
 
 	if ($action == 'deletepayment') {
@@ -5817,7 +5722,7 @@ if ($action == 'create') {
 						if ($objectidnext) {
 							print '<span class="butActionRefused classfortooltip" title="' . $langs->trans("DisabledBecauseReplacedInvoice") . '">' . $langs->trans('ClassifyCanceled') . '</span>';
 						} else {
-							print '<a class="butAction' . ($conf->use_javascript_ajax ? ' reposition' : '') . '" href="' . $_SERVER['PHP_SELF'] . '?facid=' . $object->id . '&amp;action=canceled">' . $langs->trans('ClassifyCanceled') . '</a>';
+							print '<a class="butActionDelete' . ($conf->use_javascript_ajax ? ' reposition' : '') . '" href="' . $_SERVER['PHP_SELF'] . '?facid=' . $object->id . '&amp;action=canceled">' . 'Cancelar' . '</a>';
 						}
 					}
 				}
@@ -5826,7 +5731,7 @@ if ($action == 'create') {
 			// Create a credit note
 			if (($object->type == Facture::TYPE_STANDARD || ($object->type == Facture::TYPE_DEPOSIT && empty($conf->global->FACTURE_DEPOSITS_ARE_JUST_PAYMENTS)) || $object->type == Facture::TYPE_PROFORMA) && $object->statut > 0 && $usercancreate) {
 				if (!$objectidnext) {
-					print '<a class="butAction" href="' . $_SERVER['PHP_SELF'] . '?socid=' . $object->socid . '&amp;fac_avoir=' . $object->id . '&amp;action=create&amp;type=2' . ($object->fk_project > 0 ? '&amp;projectid=' . $object->fk_project : '') . ($object->entity > 0 ? '&amp;originentity=' . $object->entity : '') . '">' . $langs->trans("CreateCreditNote") . '</a>';
+					print '<a class="butAction" href="' . $_SERVER['PHP_SELF'] . '?socid=' . $object->socid . '&amp;fac_avoir=' . $object->id . '&amp;action=create&amp;type=2' . ($object->fk_project > 0 ? '&amp;projectid=' . $object->fk_project : '') . ($object->entity > 0 ? '&amp;originentity=' . $object->entity : '') . '">' . 'Crear nota de crédito' . '</a>';
 				}
 			}
 
@@ -5847,17 +5752,17 @@ if ($action == 'create') {
 				}
 			}
 
-			// Clone
-			if (($object->type == Facture::TYPE_STANDARD || $object->type == Facture::TYPE_DEPOSIT || $object->type == Facture::TYPE_PROFORMA) && $usercancreate) {
-				print dolGetButtonAction($langs->trans('ToClone'), '', 'default', $_SERVER['PHP_SELF'] . '?facid=' . $object->id . '&amp;action=clone&amp;object=invoice', '', true, $params);
-			}
+			// // Clone
+			// if (($object->type == Facture::TYPE_STANDARD || $object->type == Facture::TYPE_DEPOSIT || $object->type == Facture::TYPE_PROFORMA) && $usercancreate) {
+			// 	print dolGetButtonAction($langs->trans('ToClone'), '', 'default', $_SERVER['PHP_SELF'] . '?facid=' . $object->id . '&amp;action=clone&amp;object=invoice', '', true, $params);
+			// }
 
-			// Clone as predefined / Create template
-			if (($object->type == Facture::TYPE_STANDARD || $object->type == Facture::TYPE_DEPOSIT || $object->type == Facture::TYPE_PROFORMA) && $object->statut == 0 && $usercancreate) {
-				if (!$objectidnext && count($object->lines) > 0) {
-					print dolGetButtonAction($langs->trans('ChangeIntoRepeatableInvoice'), '', 'default', DOL_URL_ROOT . '/compta/facture/card-rec.php?facid=' . $object->id . '&amp;action=create', '', true, $params);
-				}
-			}
+			// // Clone as predefined / Create template
+			// if (($object->type == Facture::TYPE_STANDARD || $object->type == Facture::TYPE_DEPOSIT || $object->type == Facture::TYPE_PROFORMA) && $object->statut == 0 && $usercancreate) {
+			// 	if (!$objectidnext && count($object->lines) > 0) {
+			// 		print dolGetButtonAction($langs->trans('ChangeIntoRepeatableInvoice'), '', 'default', DOL_URL_ROOT . '/compta/facture/card-rec.php?facid=' . $object->id . '&amp;action=create', '', true, $params);
+			// 	}
+			// }
 
 			// Remove situation from cycle
 			if (

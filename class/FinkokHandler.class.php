@@ -3,8 +3,10 @@
 use PhpCfdi\Finkok\FinkokSettings;
 use PhpCfdi\Finkok\FinkokEnvironment;
 use PhpCfdi\Finkok\QuickFinkok;
+use PhpCfdi\Credentials\Credential;
 use PhpCfdi\Finkok\Services\Utilities\DownloadXmlCommand;
 use PhpCfdi\Finkok\Services\Utilities\DownloadXmlService;
+use PhpCfdi\XmlCancelacion\Models\CancelDocument;
 
 require_once '../vendor/autoload.php';
 
@@ -14,6 +16,7 @@ class FinkokHandler
     private $settings;
     private $quick_finkok;
     private $xmlTimbrado;
+    private $credentials;
 
     public function __construct($username, $password, $environment = 'production')
     {
@@ -54,5 +57,22 @@ class FinkokHandler
         } else {
             return $result->error();
         }
+    }
+
+    public function cancel($uuid)
+    {
+        if (empty($this->credentials)) {
+            return 'No se ha configurado el certificado y llave privada.';
+        }
+        if (empty($uuid)){
+            return 'No se ha proporcionado el UUID del CFDI a cancelar.';
+        }
+        $result = $this->quick_finkok->cancel($this->credentials, CancelDocument::newWithErrorsUnrelated($uuid));
+        return $result;
+    }
+
+    public function setCredential($cer, $key, $pass)
+    {
+        $this->credentials = Credential::openFiles($cer, $key, $pass);
     }
 }

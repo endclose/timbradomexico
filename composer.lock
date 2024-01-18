@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "7bdf051e7abb35157032fa19b9c95e10",
+    "content-hash": "469292c1b98c8fea472ebbdb65775de8",
     "packages": [
         {
             "name": "eclipxe/cfdiutils",

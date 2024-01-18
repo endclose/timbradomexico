@@ -3,6 +3,9 @@ require_once '../vendor/autoload.php';
 
 use CfdiUtils\CfdiCreator40;
 use CfdiUtils\Certificado\Certificado;
+use PhpCfdi\Finkok\FinkokSettings;
+use PhpCfdi\Finkok\FinkokEnvironment;
+use PhpCfdi\Finkok\QuickFinkok;
 
 /**
  * Clase Cfdi que representa un Comprobante Fiscal Digital por Internet (CFDI).
@@ -17,6 +20,12 @@ class Cfdi
     private $creator;
     private $comprobante;
     private $password_cert;
+
+    private QuickFinkok $quick_finkok;
+    private FinkokSettings $finkok_settings;
+    private $xml_timbrado;
+
+
 
     private $emisor = array(
         'Nombre' => '',
@@ -202,10 +211,106 @@ class Cfdi
             if ($name == '') {
                 $name = $this->serie . '_' . $this->folio;
             }
-            $this->creator->saveXml($path . '/' . $name . '.xml');
+            $res = $this->creator->saveXml($path . '/' . $name . '.xml');
         } catch (Exception $e) {
             // Handle exception
             echo 'Error saving XML: ' . $e->getMessage();
+        }
+    }
+    public function createFromObject( Facture $object, Conf $conf){
+        try{
+            if(empty($conf->global->TIMBRADOMEXICO_EMISOR_RFC) || empty($conf->global->TIMBRADOMEXICO_EMISOR_RAZON_SOCIAL)){
+                throw new Exception('No se ha configurado el emisor');
+            }
+            $object->fetch_thirdparty();
+
+            $this->serie = 'A'; // TODO change this to a variable configurable from dolibarr
+            $this->folio = str_contains($object->ref,'PROV') ? $object->getNextNumRef($conf->mysoc) : $object->ref;
+            $this->fecha = date('Y-m-d\TH:i:s');
+            $this->formaPago = $object->array_options['options_formapago'];
+            $this->metodoPago = $object->array_options['options_metodopago'];
+            $this->tipoDeComprobante = $object->array_options['options_tipocomprobante'];
+            $this->lugarExpedicion = '20928'; //TODO: Change from the dolibarr entity address
+            $this->moneda = $object->multicurrency_code;
+            $this->condicionesDePago = 'Contado'; // TODO Fill this from the object conditions
+            $this->exportacion = $object->array_options['options_exportacion'];
+    
+            $this->createCfdi();
+    
+            $this->emisor['Nombre'] = $conf->global->TIMBRADOMEXICO_EMISOR_RAZON_SOCIAL;
+            $this->emisor['RegimenFiscal'] = $conf->global->TIMBRADOMEXICO_EMISOR_REGIMEN;
+            $this->addEmisor($this->emisor['Nombre'], $this->emisor['RegimenFiscal']);
+
+            $this->receptor['Rfc'] = $object->thirdparty->idprof1;
+            $this->receptor['Nombre'] = $object->thirdparty->name;
+            $this->receptor['UsoCFDI'] = $object->array_options['options_usocfdi'];
+            $this->receptor['RegimenFiscalReceptor'] = $object->array_options['options_regimenfiscalreceptor'];
+            $this->receptor['DomicilioFiscalReceptor'] = $object->thirdparty->zip;
+
+            $this->addReceptor(
+                $this->receptor['Rfc'], 
+                $this->receptor['Nombre'],
+                $this->receptor['UsoCFDI'],
+                $this->receptor['RegimenFiscalReceptor'],
+                $this->receptor['DomicilioFiscalReceptor']
+            );
+
+            foreach($object->lines as $line){
+                $line->fetch_product();
+                $concepto = array(
+                    'ObjetoImp'=> $line->product->array_options['options_objetoimp'],
+                    'ClaveProdServ' => $line->product->array_options['options_prodserv'],
+                    'NoIdentificacion' => $line->product->ref,
+                    'Cantidad' => $line->qty,
+                    'ClaveUnidad' => $line->product->array_options['options_claveunidad'],
+                    'Descripcion' => $line->libelle,
+                    'ValorUnitario' => $line->multicurrency_subprice,
+                    'Importe' => $line->multicurrency_total_ht,
+                );
+                if($line->tva_tx > 0){
+                    $impuestos = array(
+                        'Impuesto' => '002',
+                        'TipoFactor' => 'Tasa',
+                        'TasaOCuota' => $line->tva_tx/100,
+                        'Importe' => $line->total_tva
+                    );
+                    $this->addConcepto($concepto, $impuestos);
+                }else{
+                    $this->addConcepto($concepto);
+                }
+
+            }
+            $this->sellarCfdi();
+
+            $validations = $this->validate();
+            if(!empty($validations)){
+                throw new Exception('El CFDI no es válido: '.implode(', ',$validations));
+            }
+
+            return true;
+
+        }catch(Exception $e){
+            return $e->getMessage();
+        }
+
+
+    }
+    public function setFinkokCredentials($username, $password, $environment = 'production')
+    {
+        $environment = $environment === 'production' ?
+            FinkokEnvironment::makeProduction() :
+            FinkokEnvironment::makeDevelopment();
+
+        $this->finkok_settings = new FinkokSettings($username, $password, $environment);
+        $this->quick_finkok = new QuickFinkok($this->finkok_settings);
+    }
+    public function stamp($xml){
+        try{
+            $result = $this->quick_finkok->stamp($xml);
+            $this->xml_timbrado = $result->xml();
+            return $result;
+        }catch(Exception $e){
+            return $e;
         }
     }
 }
