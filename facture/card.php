@@ -41,7 +41,7 @@ use Stripe\Util\Set;
 
 // Libraries
 require '../../../main.inc.php';
-require_once DOL_DOCUMENT_ROOT . '/compta/facture/class/facture.class.php';
+require_once DOL_DOCUMENT_ROOT . '/custom/timbradomexico/class/facture_mexico.class.php';
 require_once DOL_DOCUMENT_ROOT . '/compta/facture/class/facture-rec.class.php';
 require_once DOL_DOCUMENT_ROOT . '/compta/bank/class/account.class.php';
 require_once DOL_DOCUMENT_ROOT . '/compta/paiement/class/paiement.class.php';
@@ -56,9 +56,6 @@ require_once DOL_DOCUMENT_ROOT . '/core/lib/functions2.lib.php';
 require_once DOL_DOCUMENT_ROOT . '/core/lib/date.lib.php';
 require_once DOL_DOCUMENT_ROOT . '/core/class/extrafields.class.php';
 require_once DOL_DOCUMENT_ROOT . '/custom/timbradomexico/lib/timbradomexico.lib.php';
-
-require_once DOL_DOCUMENT_ROOT . '/custom/timbradomexico/class/Cfdi.class.php';
-require_once DOL_DOCUMENT_ROOT . '/custom/timbradomexico/class/FinkokHandler.class.php';
 
 
 if (isModEnabled('commande')) {
@@ -117,7 +114,7 @@ $NBLINES = 4;
 
 $usehm = (!empty($conf->global->MAIN_USE_HOURMIN_IN_DATE_RANGE) ? $conf->global->MAIN_USE_HOURMIN_IN_DATE_RANGE : 0);
 
-$object = new Facture($db);
+$object = new FactureMexico($db);
 $extrafields = new ExtraFields($db);
 
 // Fetch optionals attributes and labels
@@ -669,35 +666,19 @@ if (empty($reshook)) {
 				}
 			}
 		}
-		$cfdi = new Cfdi(
-			$conf->global->TIMBRADOMEXICO_PATH_CERTIFICADO,
-			$conf->global->TIMBRADOMEXICO_PATH_LLAVE_PRIVADA,
-			$conf->global->TIMBRADOMEXICO_LLAVE_PRIVADA_PASSWORD
-		);
 
-		$res = $cfdi->createFromObject($object, $conf);
-		if($res === true){
-			$xml = $cfdi->getXml();
-			file_put_contents('cfdi.xml', $xml);
-			$cfdi->setFinkokCredentials('benjamin.bailon@outlook.com', 'Tier299S?', 'dev');
-			$stamp_result = $cfdi->stamp($xml);
-			if($stamp_result->hasAlerts()){
-				foreach($stamp_result->alerts() as $alert){
-					setEventMessages($alert->message(), null, 'errors');
-				}
-			}else{
-				setEventMessage('Timbrado exitoso');
-				$object->array_options['options_uuid'] = $stamp_result->uuid();
-				$object->array_options['options_timbrada'] = 1;
-
-				$object->update($user, 1);
-				$object->validate($user);
-
+		$xml = $object->createXMLFromObject();
+		if (is_string($xml)) {
+			$res = $object->stamp();
+			if ($res) {
+				setEventMessages('Timbrado exitoso', null);
+			} else {
+				setEventMessages('Timbrado fallido:' . $object->error, null, 'errors');
 			}
-		}else{
-			setEventMessage($res,'errors');
+			$object->saveXML($res);
+		} else {
+			setEventMessage('No se pudo generar el XML', 'errors');
 		}
-
 	} elseif ($action == 'confirm_modif' && $usercanunvalidate) {
 		// Go back to draft status (unvalidate)
 		$idwarehouse = GETPOST('idwarehouse', 'int');
@@ -801,34 +782,7 @@ if (empty($reshook)) {
 		}
 	} elseif ($action == 'confirm_canceled' && $confirm == 'yes') {
 		if ($object->statut != $object::STATUS_ABANDONED) {
-			$finkokHandler = new FinkokHandler(
-				'benjamin.bailon@outlook.com', //TODO Change to values stored on database
-				'Tier299S?', //TODO Change to values stored on database
-				'dev'
-			);
-			$finkokHandler->setCredential(
-				DOL_DOCUMENT_ROOT . '/custom/timbradomexico/facture/certs/EKU9003173C9/EKU9003173C9.cer', //TODO Change to values stored on database
-				DOL_DOCUMENT_ROOT . '/custom/timbradomexico/facture/certs/EKU9003173C9/EKU9003173C9.key.pem', //TODO Change to values stored on database
-				'Tier299S?' //TODO Change to values stored on database
-			);
-			$result = $finkokHandler->cancel($object->array_options['options_uuid']);
-			if (is_string($result)) {
-				setEventMessages($result, null, 'errors');
-			} else {
-				$acuse = $result->voucher();
-				$document = $result->documents()->first();
-
-				if ($acuse) {
-					var_dump($acuse);
-				}
-
-				if ($document->documentStatus() == '201') {
-					$object->setCanceled($user);
-					setEventMessage($document->documentStatus() . ' ' . $document->cancellationStatus());
-				} else {
-					setEventMessage($document->documentStatus() . ' ' . $document->cancellationStatus(), 'errors');
-				}
-			}
+			setEventMessages('No implementado aún', null, 'errors');
 		} else {
 			setEventMessage('La factura ya se encuentra cancelada', null, 'errors');
 		}
@@ -4159,39 +4113,7 @@ if ($action == 'create') {
 
 	// Confirmation to delete invoice
 	if ($action == 'delete') {
-		$text = $langs->trans('ConfirmDeleteBill', $object->ref);
-		$formquestion = array();
-
-		if ($object->type != Facture::TYPE_DEPOSIT && !empty($conf->global->STOCK_CALCULATE_ON_BILL) && $object->statut >= 1) {
-			$qualified_for_stock_change = 0;
-			if (empty($conf->global->STOCK_SUPPORTS_SERVICES)) {
-				$qualified_for_stock_change = $object->hasProductsOrServices(2);
-			} else {
-				$qualified_for_stock_change = $object->hasProductsOrServices(1);
-			}
-
-			if ($qualified_for_stock_change) {
-				$langs->load("stocks");
-				require_once DOL_DOCUMENT_ROOT . '/product/class/html.formproduct.class.php';
-				$formproduct = new FormProduct($db);
-				$label = $object->type == Facture::TYPE_CREDIT_NOTE ? $langs->trans("SelectWarehouseForStockDecrease") : $langs->trans("SelectWarehouseForStockIncrease");
-				$forcecombo = 0;
-				if ($conf->browser->name == 'ie') {
-					$forcecombo = 1; // There is a bug in IE10 that make combo inside popup crazy
-				}
-				$formquestion = array(
-					// 'text' => $langs->trans("ConfirmClone"),
-					// array('type' => 'checkbox', 'name' => 'clone_content', 'label' => $langs->trans("CloneMainAttributes"), 'value' => 1),
-					// array('type' => 'checkbox', 'name' => 'update_prices', 'label' => $langs->trans("PuttingPricesUpToDate"), 'value' => 1),
-					array('type' => 'other', 'name' => 'idwarehouse', 'label' => $label, 'value' => $formproduct->selectWarehouses(GETPOST('idwarehouse') ? GETPOST('idwarehouse') : 'ifone', 'idwarehouse', '', 1, 0, 0, $langs->trans("NoStockAction"), 0, $forcecombo))
-				);
-				$formconfirm = $form->formconfirm($_SERVER['PHP_SELF'] . '?facid=' . $object->id, $langs->trans('DeleteBill'), $text, 'confirm_delete', $formquestion, "yes", 1);
-			} else {
-				$formconfirm = $form->formconfirm($_SERVER['PHP_SELF'] . '?facid=' . $object->id, $langs->trans('DeleteBill'), $text, 'confirm_delete', '', 'no', 1);
-			}
-		} else {
-			$formconfirm = $form->formconfirm($_SERVER['PHP_SELF'] . '?facid=' . $object->id, $langs->trans('DeleteBill'), $text, 'confirm_delete', '', 'no', 1);
-		}
+		setEventMessages('No permitido eliminar facturas', null, 'errors');
 	}
 
 	// Confirmation to remove invoice from cycle
@@ -4647,21 +4569,21 @@ if ($action == 'create') {
 	print '</td></tr>';
 
 	// Payment mode
-	print '<tr><td>';
-	print '<table class="nobordernopadding centpercent"><tr><td>';
-	print $langs->trans('PaymentMode');
-	print '</td>';
-	if ($action != 'editmode' && $usercancreate) {
-		print '<td class="right"><a class="editfielda" href="' . $_SERVER["PHP_SELF"] . '?action=editmode&token=' . newToken() . '&facid=' . $object->id . '">' . img_edit($langs->trans('SetMode'), 1) . '</a></td>';
-	}
-	print '</tr></table>';
-	print '</td><td>';
-	if ($action == 'editmode') {
-		$form->form_modes_reglement($_SERVER['PHP_SELF'] . '?facid=' . $object->id, $object->mode_reglement_id, 'mode_reglement_id', 'CRDT', 1, 1);
-	} else {
-		$form->form_modes_reglement($_SERVER['PHP_SELF'] . '?facid=' . $object->id, $object->mode_reglement_id, 'none', 'CRDT');
-	}
-	print '</td></tr>';
+	// print '<tr><td>';
+	// print '<table class="nobordernopadding centpercent"><tr><td>';
+	// print $langs->trans('PaymentMode');
+	// print '</td>';
+	// if ($action != 'editmode' && $usercancreate) {
+	// 	print '<td class="right"><a class="editfielda" href="' . $_SERVER["PHP_SELF"] . '?action=editmode&token=' . newToken() . '&facid=' . $object->id . '">' . img_edit($langs->trans('SetMode'), 1) . '</a></td>';
+	// }
+	// print '</tr></table>';
+	// print '</td><td>';
+	// if ($action == 'editmode') {
+	// 	$form->form_modes_reglement($_SERVER['PHP_SELF'] . '?facid=' . $object->id, $object->mode_reglement_id, 'mode_reglement_id', 'CRDT', 1, 1);
+	// } else {
+	// 	$form->form_modes_reglement($_SERVER['PHP_SELF'] . '?facid=' . $object->id, $object->mode_reglement_id, 'none', 'CRDT');
+	// }
+	// print '</td></tr>';
 
 	// Multicurrency
 	if (isModEnabled('multicurrency')) {
