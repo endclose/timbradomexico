@@ -348,7 +348,6 @@ class FactureMexico extends Facture
     }
 
     public function getXMLFromFinkok(){
-        global $conf;
         if (empty($this->array_options['options_uuid'])) {
             $this->error = 'No se ha proporcionado el UUID del CFDI a recuperar.';
             return false;
@@ -369,5 +368,22 @@ class FactureMexico extends Facture
             $this->error = $result->error();
             return false;
         }
+    }
+
+    public function getXMLFromSystem(){
+        global $conf;
+
+        $xml = $conf->facture->multidir_output[$conf->entity] . '/' . $this->ref . '/' . $this->array_options['options_uuid'] . '.xml';
+        if (!file_exists($xml)) {
+            if($this->getXMLFromFinkok()){
+                $this->saveXML(true);
+                return true;
+            }else{
+                $this->error = 'Imposible recuperar el CFDI';
+                return false;
+            }
+        }
+        $this->xml_timbrado = file_get_contents($xml);
+        return true;
     }
 }

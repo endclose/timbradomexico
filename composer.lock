@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "469292c1b98c8fea472ebbdb65775de8",
+    "content-hash": "678c4ef427857ef7aa7b6a92fe324de8",
     "packages": [
         {
             "name": "eclipxe/cfdiutils",
@@ -341,6 +341,123 @@
             "time": "2023-06-13T16:55:17+00:00"
         },
         {
+            "name": "league/plates",
+            "version": "v3.5.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/thephpleague/plates.git",
+                "reference": "a6a3238e46c6e19af7318fdc36bfbe49b0620231"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/thephpleague/plates/zipball/a6a3238e46c6e19af7318fdc36bfbe49b0620231",
+                "reference": "a6a3238e46c6e19af7318fdc36bfbe49b0620231",
+                "shasum": ""
+            },
+            "require": {
+                "php": "^7.0|^8.0"
+            },
+            "require-dev": {
+                "mikey179/vfsstream": "^1.6",
+                "phpunit/phpunit": "^9.5",
+                "squizlabs/php_codesniffer": "^3.5"
+            },
+            "type": "library",
+            "extra": {
+                "branch-alias": {
+                    "dev-master": "3.0-dev"
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "League\\Plates\\": "src"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Jonathan Reinink",
+                    "email": "jonathan@reinink.ca",
+                    "role": "Developer"
+                },
+                {
+                    "name": "RJ Garcia",
+                    "email": "ragboyjr@icloud.com",
+                    "role": "Developer"
+                }
+            ],
+            "description": "Plates, the native PHP template system that's fast, easy to use and easy to extend.",
+            "homepage": "https://platesphp.com",
+            "keywords": [
+                "league",
+                "package",
+                "templates",
+                "templating",
+                "views"
+            ],
+            "support": {
+                "issues": "https://github.com/thephpleague/plates/issues",
+                "source": "https://github.com/thephpleague/plates/tree/v3.5.0"
+            },
+            "time": "2023-01-16T20:25:45+00:00"
+        },
+        {
+            "name": "phpcfdi/cfdi-cleaner",
+            "version": "v1.3.2",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/phpcfdi/cfdi-cleaner.git",
+                "reference": "2c3e88d0d58437fa2311471fe0bd00e6b8e5e057"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/phpcfdi/cfdi-cleaner/zipball/2c3e88d0d58437fa2311471fe0bd00e6b8e5e057",
+                "reference": "2c3e88d0d58437fa2311471fe0bd00e6b8e5e057",
+                "shasum": ""
+            },
+            "require": {
+                "ext-dom": "*",
+                "ext-libxml": "*",
+                "php": ">=7.3",
+                "symfony/polyfill-php80": "^1.22"
+            },
+            "require-dev": {
+                "ext-json": "*",
+                "phpunit/phpunit": "^9.3"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "PhpCfdi\\CfdiCleaner\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Carlos C Soto",
+                    "email": "eclipxe13@gmail.com"
+                }
+            ],
+            "description": "Clean up Mexican CFDI",
+            "homepage": "https://github.com/phpcfdi/cfdi-cleaner",
+            "keywords": [
+                "cfdi",
+                "mexico",
+                "sat"
+            ],
+            "support": {
+                "issues": "https://github.com/phpcfdi/cfdi-cleaner/issues",
+                "source": "https://github.com/phpcfdi/cfdi-cleaner/tree/v1.3.2"
+            },
+            "time": "2024-01-16T05:59:14+00:00"
+        },
+        {
             "name": "phpcfdi/cfdi-expresiones",
             "version": "v3.2.0",
             "source": {
@@ -392,6 +509,133 @@
                 "source": "https://github.com/phpcfdi/cfdi-expresiones"
             },
             "time": "2022-06-27T17:02:05+00:00"
+        },
+        {
+            "name": "phpcfdi/cfdi-to-json",
+            "version": "v0.3.4",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/phpcfdi/cfdi-to-json.git",
+                "reference": "1eb95916aee3b7459f3bbb67d66cf4e64865b9d6"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/phpcfdi/cfdi-to-json/zipball/1eb95916aee3b7459f3bbb67d66cf4e64865b9d6",
+                "reference": "1eb95916aee3b7459f3bbb67d66cf4e64865b9d6",
+                "shasum": ""
+            },
+            "require": {
+                "ext-dom": "*",
+                "ext-json": "*",
+                "php": ">=7.3"
+            },
+            "require-dev": {
+                "phpunit/phpunit": "^9.5"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "PhpCfdi\\CfdiToJson\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Carlos C Soto",
+                    "email": "eclipxe13@gmail.com",
+                    "homepage": "https://github.com/phpcfdi/cfdi-to-json"
+                }
+            ],
+            "description": "Convert CFDI to JSON",
+            "homepage": "https://github.com/phpcfdi/cfdi-to-json",
+            "keywords": [
+                "cfdi",
+                "json",
+                "mexico",
+                "sat"
+            ],
+            "support": {
+                "issues": "https://github.com/phpcfdi/cfdi-to-json/issues",
+                "source": "https://github.com/phpcfdi/cfdi-to-json"
+            },
+            "time": "2023-10-22T08:55:32+00:00"
+        },
+        {
+            "name": "phpcfdi/cfditopdf",
+            "version": "v0.4.1",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/phpcfdi/cfditopdf.git",
+                "reference": "767802159043e9f1fa18e848bc14358decd3269c"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/phpcfdi/cfditopdf/zipball/767802159043e9f1fa18e848bc14358decd3269c",
+                "reference": "767802159043e9f1fa18e848bc14358decd3269c",
+                "shasum": ""
+            },
+            "require": {
+                "eclipxe/cfdiutils": "^2.11.0",
+                "league/plates": "^3.3",
+                "php": ">=7.3",
+                "phpcfdi/cfdi-cleaner": "^1.2",
+                "spipu/html2pdf": "^5.1"
+            },
+            "require-dev": {
+                "phpunit/phpunit": "^9.5"
+            },
+            "bin": [
+                "bin/cfditopdf"
+            ],
+            "type": "library",
+            "extra": {
+                "phar-builder": {
+                    "compression": "GZip",
+                    "entry-point": "bin/cfditopdf",
+                    "include": [
+                        "bin",
+                        "src",
+                        "templates"
+                    ],
+                    "include-dev": false,
+                    "name": "cfditopdf.phar",
+                    "output-dir": "build/",
+                    "skip-shebang": false
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "PhpCfdi\\CfdiToPdf\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Carlos C Soto",
+                    "email": "eclipxe13@gmail.com",
+                    "homepage": "https://eclipxe.com.mx/"
+                }
+            ],
+            "description": "Create a generic PDF file from a CFDI 3.3 & 4.0 (CLI included)",
+            "homepage": "https://github.com/phpcfdi/cfditopdf",
+            "keywords": [
+                "cfdi",
+                "factura",
+                "invoice",
+                "mexico",
+                "pdf"
+            ],
+            "support": {
+                "issues": "https://github.com/phpcfdi/cfditopdf/issues",
+                "source": "https://github.com/phpcfdi/cfditopdf"
+            },
+            "time": "2023-06-07T17:47:05+00:00"
         },
         {
             "name": "phpcfdi/credentials",
@@ -668,6 +912,63 @@
             "time": "2020-09-05T13:00:25+00:00"
         },
         {
+            "name": "spipu/html2pdf",
+            "version": "v5.2.8",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/spipu/html2pdf.git",
+                "reference": "6c94dcd48c94c6c73f206629839c1ebd81e8c726"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/spipu/html2pdf/zipball/6c94dcd48c94c6c73f206629839c1ebd81e8c726",
+                "reference": "6c94dcd48c94c6c73f206629839c1ebd81e8c726",
+                "shasum": ""
+            },
+            "require": {
+                "ext-gd": "*",
+                "ext-mbstring": "*",
+                "php": "^5.6 || ^7.0 || ^8.0",
+                "tecnickcom/tcpdf": "^6.3"
+            },
+            "require-dev": {
+                "phpunit/phpunit": "^5.0 || ^9.0"
+            },
+            "suggest": {
+                "ext-gd": "Allows to embed images into the PDF",
+                "fagundes/zff-html2pdf": "if you need to integrate Html2Pdf with Zend Framework 2 (zf2)"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Spipu\\Html2Pdf\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "OSL-3.0"
+            ],
+            "authors": [
+                {
+                    "name": "Spipu",
+                    "homepage": "https://github.com/spipu",
+                    "role": "Developer"
+                }
+            ],
+            "description": "Html2Pdf is a HTML to PDF converter written in PHP5 (it uses TCPDF). OFFICIAL PACKAGE",
+            "homepage": "http://html2pdf.fr/",
+            "keywords": [
+                "html",
+                "html2pdf",
+                "pdf"
+            ],
+            "support": {
+                "issues": "https://github.com/spipu/html2pdf/issues",
+                "source": "https://github.com/spipu/html2pdf/tree/v5.2.8"
+            },
+            "time": "2023-07-18T14:52:59+00:00"
+        },
+        {
             "name": "symfony/polyfill-php80",
             "version": "v1.28.0",
             "source": {
@@ -811,6 +1112,78 @@
                 }
             ],
             "time": "2023-12-02T08:41:43+00:00"
+        },
+        {
+            "name": "tecnickcom/tcpdf",
+            "version": "6.6.5",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/tecnickcom/TCPDF.git",
+                "reference": "5fce932fcee4371865314ab7f6c0d85423c5c7ce"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/tecnickcom/TCPDF/zipball/5fce932fcee4371865314ab7f6c0d85423c5c7ce",
+                "reference": "5fce932fcee4371865314ab7f6c0d85423c5c7ce",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=5.3.0"
+            },
+            "type": "library",
+            "autoload": {
+                "classmap": [
+                    "config",
+                    "include",
+                    "tcpdf.php",
+                    "tcpdf_parser.php",
+                    "tcpdf_import.php",
+                    "tcpdf_barcodes_1d.php",
+                    "tcpdf_barcodes_2d.php",
+                    "include/tcpdf_colors.php",
+                    "include/tcpdf_filters.php",
+                    "include/tcpdf_font_data.php",
+                    "include/tcpdf_fonts.php",
+                    "include/tcpdf_images.php",
+                    "include/tcpdf_static.php",
+                    "include/barcodes/datamatrix.php",
+                    "include/barcodes/pdf417.php",
+                    "include/barcodes/qrcode.php"
+                ]
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "LGPL-3.0-or-later"
+            ],
+            "authors": [
+                {
+                    "name": "Nicola Asuni",
+                    "email": "info@tecnick.com",
+                    "role": "lead"
+                }
+            ],
+            "description": "TCPDF is a PHP class for generating PDF documents and barcodes.",
+            "homepage": "http://www.tcpdf.org/",
+            "keywords": [
+                "PDFD32000-2008",
+                "TCPDF",
+                "barcodes",
+                "datamatrix",
+                "pdf",
+                "pdf417",
+                "qrcode"
+            ],
+            "support": {
+                "issues": "https://github.com/tecnickcom/TCPDF/issues",
+                "source": "https://github.com/tecnickcom/TCPDF/tree/6.6.5"
+            },
+            "funding": [
+                {
+                    "url": "https://www.paypal.com/cgi-bin/webscr?cmd=_donations&currency_code=GBP&business=paypal@tecnick.com&item_name=donation%20for%20tcpdf%20project",
+                    "type": "custom"
+                }
+            ],
+            "time": "2023-09-06T15:09:26+00:00"
         }
     ],
     "packages-dev": [],

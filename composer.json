@@ -3,6 +3,8 @@
         "facturapi/facturapi-php": "^2.4",
         "eclipxe/cfdiutils": "^2.25",
         "phpcfdi/finkok": "^0.5.3",
-        "phpcfdi/credentials": "^1.2"
+        "phpcfdi/credentials": "^1.2",
+        "phpcfdi/cfdi-to-json": "^0.3.4",
+        "phpcfdi/cfditopdf": "^0.4.1"
     }
 }
